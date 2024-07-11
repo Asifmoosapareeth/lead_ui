@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:lead_enquiry/view/homepage.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
   runApp(
 
-      const MyApp());
+       ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -16,7 +17,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
 
       // home:  HomePage(),
-      home: PersistenBottomNavBarDemo(),
+      home: BottomNavBarDemo(),
       debugShowCheckedModeBanner: false,
 
 

@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 
 class Editpage extends StatefulWidget {
   const Editpage({Key? key}) : super(key: key);
@@ -13,13 +15,53 @@ class Editpage extends StatefulWidget {
 class _EditpageState extends State<Editpage> {
   final _formKey = GlobalKey<FormBuilderState>();
   bool followUp = false;
-  String _location = ''; // Initialize location as 'Unknown'
+  String _location = '';
+
+  List<dynamic> _states = [];
+  List<dynamic> _districts = [];
+  List<dynamic> _cities = [];
+
+  String? _selectedState;
+  String? _selectedDistrict;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchStates();
+  }
+
+  Future<void> _fetchStates() async {
+    final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/states'));
+    if (response.statusCode == 200) {
+      setState(() {
+        _states = jsonDecode(response.body);
+        print(response.body);
+      });
+    }
+  }
+
+  Future<void> _fetchDistricts(String stateId) async {
+    final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/districts/$stateId'));
+    if (response.statusCode == 200) {
+      setState(() {
+        _districts = jsonDecode(response.body);
+      });
+    }
+  }
+
+  Future<void> _fetchCities(String districtId) async {
+    final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/cities/$districtId'));
+    if (response.statusCode == 200) {
+      setState(() {
+        _cities = jsonDecode(response.body);
+      });
+    }
+  }
 
   Future<void> _getCurrentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Test if location services are enabled.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       setState(() {
@@ -46,16 +88,51 @@ class _EditpageState extends State<Editpage> {
       return;
     }
 
-    // Get current position
     Position position = await Geolocator.getCurrentPosition();
     setState(() {
       _location = 'Lat: ${position.latitude}, Long: ${position.longitude}';
     });
 
-    // Update the form field value
     _formKey.currentState?.fields['location_coordinates']?.didChange(_location);
   }
 
+
+  Future<void> _submitForm(Map<String, dynamic> formData) async {
+    final response = await http.post(
+      Uri.parse('http://127.0.0.1:8000/api/leads'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(formData),
+    );
+
+    if (response.statusCode == 201) {
+      // Handle success response
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lead created successfully')),
+      );
+      setState(() {
+        reset();
+      });
+
+
+    } else {
+      // Handle error response
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to create lead')),
+      );
+    }
+  }
+  void reset() {
+    _formKey.currentState?.reset();
+    setState(() {
+      followUp=false;
+      _location="";
+      _formKey.currentState?.fields['follow_up']?.didChange(null);
+      _formKey.currentState?.fields['location_coordinates']?.didChange('');
+    });
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,10 +148,11 @@ class _EditpageState extends State<Editpage> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
+                  SizedBox(height: 10,),
                   FormBuilderTextField(
                     name: 'name',
                     decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.person),
+                      prefixIcon: Icon(Icons.person, color: Colors.blue),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
@@ -87,12 +165,16 @@ class _EditpageState extends State<Editpage> {
                   SizedBox(height: 13),
                   FormBuilderTextField(
                     name: 'contact_number',
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.phone),
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(Icons.phone, color: Colors.blue),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
                       labelText: 'Contact Number',
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.contacts),
+                        onPressed: (){},
+                      ),
                     ),
                     validator: FormBuilderValidators.compose([
                       FormBuilderValidators.required(),
@@ -111,7 +193,7 @@ class _EditpageState extends State<Editpage> {
                   FormBuilderTextField(
                     name: 'email',
                     decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.email),
+                      prefixIcon: Icon(Icons.email, color: Colors.blue),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
@@ -125,7 +207,7 @@ class _EditpageState extends State<Editpage> {
                   FormBuilderTextField(
                     name: 'address',
                     decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.home),
+                      prefixIcon: Icon(Icons.home, color: Colors.blue),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
@@ -140,73 +222,67 @@ class _EditpageState extends State<Editpage> {
                   FormBuilderDropdown(
                     name: 'state',
                     decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.location_city),
+                      prefixIcon: Icon(Icons.location_city, color: Colors.blue),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
                       labelText: 'State',
                     ),
-                    items: ['Kerala', 'Tamilnadu']
-                        .map((state) => DropdownMenuItem(
-                      value: state,
-                      child: Text(state),
-                    ))
-                        .toList(),
+                    items: _states.map((state) => DropdownMenuItem(
+                      value: state['id'].toString(),
+                      child: Text(state['name']),
+                    )).toList(),
                     validator: FormBuilderValidators.compose([
                       FormBuilderValidators.required(),
                     ]),
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedState = val.toString();
+                        _fetchDistricts(_selectedState!);
+                        _districts = [];
+                        _cities = [];
+                      });
+                    },
                   ),
                   SizedBox(height: 13),
                   FormBuilderDropdown(
                     name: 'district',
                     decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.location_city),
+                      prefixIcon: Icon(Icons.location_city, color: Colors.blue),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
                       labelText: 'District',
                     ),
-                    items: [
-                      'Thiruvananthapuram',
-                      'Kollam',
-                      'Pathanamthitta',
-                      'Alappuzha',
-                      'Kottayam',
-                      'Idukki',
-                      'Ernakulam',
-                      'Thrissur',
-                      'Palakkad',
-                      'Malappuram',
-                      'Kozhikode',
-                      'Wayanad',
-                      'Kannur',
-                      'Kasaragod'
-                    ]
-                        .map((district) => DropdownMenuItem(
-                      value: district,
-                      child: Text(district),
-                    ))
-                        .toList(),
+                    items: _districts.map((district) => DropdownMenuItem(
+                      value: district['id'].toString(),
+                      child: Text(district['name']),
+                    )).toList(),
                     validator: FormBuilderValidators.compose([
                       FormBuilderValidators.required(),
                     ]),
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedDistrict = val.toString();
+                        _fetchCities(_selectedDistrict!);
+                        _cities = [];
+                      });
+                    },
                   ),
                   SizedBox(height: 13),
                   FormBuilderDropdown(
                     name: 'city',
                     decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.location_city),
+                      prefixIcon: Icon(Icons.location_city, color: Colors.blue),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
                       labelText: 'City',
                     ),
-                    items: ['City1', 'City2', 'City3']
-                        .map((city) => DropdownMenuItem(
-                      value: city,
-                      child: Text(city),
-                    ))
-                        .toList(),
+                    items: _cities.map((city) => DropdownMenuItem(
+                      value: city['id'].toString(),
+                      child: Text(city['name']),
+                    )).toList(),
                     validator: FormBuilderValidators.compose([
                       FormBuilderValidators.required(),
                     ]),
@@ -214,22 +290,19 @@ class _EditpageState extends State<Editpage> {
                   SizedBox(height: 13),
                   FormBuilderTextField(
                     name: 'location_coordinates',
-                    initialValue:_location,
-
-                    // Use _location as initial value
+                    initialValue: _location,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
                       labelText: 'Location Coordinates',
                       suffixIcon: IconButton(
-                        icon: Icon(Icons.my_location),
-                        onPressed: ()  {
-                           setState(() {
-                             _getCurrentLocation();
-
-                           });
-                           print(_location);
+                        icon: Icon(Icons.my_location, color: Colors.blue),
+                        onPressed: () {
+                          setState(() {
+                            _getCurrentLocation();
+                          });
+                          print(_location);
                         },
                       ),
                     ),
@@ -241,18 +314,17 @@ class _EditpageState extends State<Editpage> {
                   SizedBox(height: 13),
                   FormBuilderDropdown(
                     name: 'follow_up',
+                    initialValue: followUp ? 'Yes' : 'No',
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
                       labelText: 'Follow-up',
                     ),
-                    items: ['Yes', 'No']
-                        .map((followUp) => DropdownMenuItem(
+                    items: ['Yes', 'No'].map((followUp) => DropdownMenuItem(
                       value: followUp,
                       child: Text(followUp),
-                    ))
-                        .toList(),
+                    )).toList(),
                     validator: FormBuilderValidators.compose([
                       FormBuilderValidators.required(),
                     ]),
@@ -271,12 +343,10 @@ class _EditpageState extends State<Editpage> {
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
                     ),
-                    options: ['Hot', 'Warm', 'Cold']
-                        .map((priority) => FormBuilderFieldOption(
+                    options: ['Hot', 'Warm', 'Cold'].map((priority) => FormBuilderFieldOption(
                       value: priority,
                       child: Text(priority),
-                    ))
-                        .toList(),
+                    )).toList(),
                     validator: FormBuilderValidators.compose([
                       FormBuilderValidators.required(),
                     ]),
@@ -286,11 +356,12 @@ class _EditpageState extends State<Editpage> {
                     onPressed: () {
                       if (_formKey.currentState!.saveAndValidate()) {
                         final formData = _formKey.currentState!.value;
-                        print(formData);
+                        _submitForm(formData);
                       }
                     },
                     child: Text('Submit'),
                   ),
+
                   SizedBox(height: 20),
                 ],
               ),

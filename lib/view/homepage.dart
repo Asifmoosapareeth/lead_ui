@@ -1,52 +1,102 @@
 import 'package:flutter/material.dart';
-import 'package:lead_enquiry/view/dropdown.dart';
-import 'package:lead_enquiry/view/editpage.dart';
-import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
+import 'package:lead_enquiry/view/firstpage.dart';
 
-class PersistenBottomNavBarDemo extends StatelessWidget {
+import 'package:lead_enquiry/view/add_data.dart';
+// import 'package:lead_enquiry/constants/trilall.dart';
+// import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
+// import 'package:flutter/material.dart';
+// import 'package:lead_enquiry/view/firstpage.dart';
+
+
+class BottomNavBarDemo extends StatefulWidget {
+  @override
+  _BottomNavBarDemoState createState() => _BottomNavBarDemoState();
+}
+
+class _BottomNavBarDemoState extends State<BottomNavBarDemo> {
+  int _selectedIndex = 0;
+
+  static List<Widget> _widgetOptions = <Widget>[
+    FirstPage(),
+    Editpage(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-    debugShowCheckedModeBanner: false,
-      title: 'Persistent Bottom Navigation Bar Demo',
-      home: PersistentTabView(
-
-       screenTransitionAnimation: ScreenTransitionAnimation(
-         curve: Curves.linear
-       ),
-        // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        // floatingActionButton: SizedBox(
-        //   width: 100,height: 40,
-        //   child: ElevatedButton(
-        //       onPressed: (){},
-        //       child: Text('+',style: TextStyle(fontSize: 15),)),
-        // ),
-        tabs: [
-
-          PersistentTabConfig(
-            screen: Dropdown(),
-            item: ItemConfig(
-              icon: Icon(Icons.list),
-              title: "list",
-            ),
-          ),
-          PersistentTabConfig(
-            screen: Editpage(),
-            item: ItemConfig(
-              icon: Icon(Icons.edit),
-              title: "edit",
-            ),
-          ),
-        ],
-        navBarBuilder: (navBarConfig) => Style1BottomNavBar(
-          navBarConfig: navBarConfig,
+      debugShowCheckedModeBanner: false,
+      title: 'Bottom Navigation Bar Demo',
+      home: Scaffold(
+        body: Center(
+          child: _widgetOptions.elementAt(_selectedIndex),
         ),
-
+        bottomNavigationBar: BottomNavigationBar(
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: Icon(Icons.list),
+              label: 'List',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.edit),
+              label: 'Edit',
+            ),
+          ],
+          currentIndex: _selectedIndex,
+          selectedItemColor: Colors.amber[800],
+          onTap: _onItemTapped,
+        ),
       ),
-
     );
   }
 }
+
+void main() {
+  runApp(BottomNavBarDemo());
+}
+
+// class PersistenBottomNavBarDemo extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//     debugShowCheckedModeBanner: false,
+//       title: 'Persistent Bottom Navigation Bar Demo',
+//       home: PersistentTabView(
+//
+//        screenTransitionAnimation: ScreenTransitionAnimation(
+//          curve: Curves.linear
+//        ),
+//         tabs: [
+//
+//           PersistentTabConfig(
+//             screen: FirstPage(),
+//             item: ItemConfig(
+//               icon: Icon(Icons.list),
+//               title: "list",
+//             ),
+//           ),
+//           PersistentTabConfig(
+//             screen: Editpage(),
+//             item: ItemConfig(
+//               icon: Icon(Icons.edit),
+//               title: "edit",
+//             ),
+//           ),
+//         ],
+//         navBarBuilder: (navBarConfig) => Style1BottomNavBar(
+//           navBarConfig: navBarConfig,
+//         ),
+//
+//       ),
+//
+//     );
+//   }
+// }
 
 
 // import 'package:flutter/material.dart';
