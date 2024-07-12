@@ -219,6 +219,7 @@ class _EditpageState extends State<Editpage> {
                     maxLines: 4,
                   ),
                   SizedBox(height: 13),
+
                   FormBuilderDropdown(
                     name: 'state',
                     decoration: const InputDecoration(
@@ -302,7 +303,7 @@ class _EditpageState extends State<Editpage> {
                           setState(() {
                             _getCurrentLocation();
                           });
-                          print(_location);
+                          // print(_location);
                         },
                       ),
                     ),

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:lead_enquiry/view/homepage.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
   runApp(
 
-       ProviderScope(child: MyApp()));
+       MyApp());
 }
 
 class MyApp extends StatelessWidget {
