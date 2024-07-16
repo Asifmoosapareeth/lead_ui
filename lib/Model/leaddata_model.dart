@@ -10,6 +10,7 @@ class Lead {
   final String city;
   final String locationCoordinates;
   final String followUp;
+   String? followup_date;
   final String leadPriority;
   final String? remarks;
   final DateTime createdAt;
@@ -31,6 +32,7 @@ class Lead {
     required this.city,
     required this.locationCoordinates,
     required this.followUp,
+    this.followup_date,
     required this.leadPriority,
     this.remarks,
     required this.createdAt,
@@ -54,6 +56,8 @@ class Lead {
       city: json['city'],
       locationCoordinates: json['location_coordinates'],
       followUp: json['follow_up'],
+      followup_date: json['follow_up_date'],
+
       leadPriority: json['lead_priority'],
       remarks: json['remarks'],
       createdAt: DateTime.parse(json['created_at']),

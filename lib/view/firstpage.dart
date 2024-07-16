@@ -1,7 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:lead_enquiry/constants/texticon.dart';
 import '../Model/leaddata_model.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import 'add_data.dart';
 
 class FirstPage extends StatefulWidget {
   const FirstPage({Key? key}) : super(key: key);
@@ -12,7 +16,6 @@ class FirstPage extends StatefulWidget {
 
 class _FirstPageState extends State<FirstPage> {
   List<Lead> _leads = [];
-  Map<String, String> _stateMap = {};
 
   @override
   void initState() {
@@ -48,15 +51,35 @@ class _FirstPageState extends State<FirstPage> {
       );
     }
   }
+  void _openWhatsApp(String phoneNumber) async {
+    final Uri whatsappUri = Uri(
+      scheme: 'https',
+      host: 'wa.me',
+      path: phoneNumber,
+      queryParameters: {'text': 'Hello'},
+    );
 
-  // Future<void>_refresh () async{
-  //   await _fetchLeads();
-  // }
+    if (await canLaunch(whatsappUri.toString())) {
+      await launch(whatsappUri.toString());
+    } else {
+      throw 'Could not launch $whatsappUri';
+    }
+  }
+
+  void _makePhoneCall(String phoneNumber) async {
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
+    await launch(launchUri.toString());
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Leads List'),
+        backgroundColor: Colors.teal,
       ),
       body: RefreshIndicator(
         onRefresh: _fetchLeads,
@@ -66,48 +89,87 @@ class _FirstPageState extends State<FirstPage> {
           itemCount: _leads.length,
           itemBuilder: (context, index) {
             final lead = _leads[index];
-        
-            return Card(
-              margin: EdgeInsets.all(8.0),
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          lead.name,
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
+
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Card(
+                shadowColor: Colors.green,
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                color: Colors.teal.shade100,
+                elevation: 8,
+                margin: EdgeInsets.all(8.0),
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(
+                              child: Text(lead.name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,)),
+                            ),
+                            SizedBox(height: 10),
+
+
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                IconText(icon: Icons.phone, text: '${lead.contactNumber}'),
+                              IconButton(
+                                onPressed: () {
+                                  _makePhoneCall(lead.contactNumber.toString());
+                                },
+                                icon: Icon(Icons.call, color: Colors.green),
+                              ),
+                                if (lead.isWhatsapp==false)
+                              GestureDetector(
+                                  onTap: (){
+                                    _openWhatsApp(lead.contactNumber.toString());
+                                  },
+                                  child: Image.asset('asset/logo/whatsp_icon.png',scale: 15,)
+
+                              )
+                            ],),
+
+                            IconText(icon: Icons.email, text: '${lead.email}'),
+                            IconText(icon: Icons.home, text: lead.address),
+                            IconText(icon: Icons.flag, text: 'State: ${lead.stateName}'),
+                            IconText(icon: Icons.flag_outlined, text: 'District: ${lead.districtName}'),
+                            IconText(icon: Icons.location_city, text: 'City: ${lead.cityName}'),
+                            IconText(icon: Icons.map, text: ' ${lead.locationCoordinates}'),
+                            IconText(icon: Icons.date_range, text: 'Follow-up date: ${lead.followup_date}'),
+                            Divider(color: Colors.grey,height: 25,),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                              GestureDetector(
+                                  onTap: () async {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => Editpage(lead: lead), // Pass the lead data
+                                      ),
+                                    );
+                                    _fetchLeads();
+                                  },
+                                  child: Image.asset('asset/logo/edit_icon.png',scale: 10,)),
+
+                                GestureDetector(
+                                    onTap: (){
+                                    },
+                                    child: Image.asset('asset/logo/delete_icon.png',scale: 10,)),
+                            ],)
+                          ],
                         ),
-                        SizedBox(height: 5),
-                        Text('Email: ${lead.email}'),
-                        Text('Phone: ${lead.contactNumber}'),
-                        Text('Address: ${lead.address}'),
-                        Text('State: ${lead.stateName}'),
-                        Text('District: ${lead.districtName}'),
-                        Text('City: ${lead.cityName}')
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        IconButton(
-                          onPressed: () {
-        
-                          },
-                          icon: Icon(Icons.edit),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            _deleteLead(lead.id);
-                          },
-                          icon: Icon(Icons.delete),
-                        ),
-                      ],
-                    )
-                  ],
+                      ),
+
+                    ],
+                  ),
                 ),
               ),
             );

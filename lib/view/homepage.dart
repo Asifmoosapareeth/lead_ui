@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lead_enquiry/view/firstpage.dart';
 
 import 'package:lead_enquiry/view/add_data.dart';
-// import 'package:lead_enquiry/constants/trilall.dart';
+
+
 // import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 // import 'package:flutter/material.dart';
 // import 'package:lead_enquiry/view/firstpage.dart';
