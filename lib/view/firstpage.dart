@@ -2,10 +2,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:lead_enquiry/constants/texticon.dart';
+import 'package:lead_enquiry/view/details.dart';
+import 'package:lead_enquiry/view/triall2.dart';
 import '../Model/leaddata_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'add_data.dart';
+
 
 class FirstPage extends StatefulWidget {
   const FirstPage({Key? key}) : super(key: key);
@@ -51,6 +54,7 @@ class _FirstPageState extends State<FirstPage> {
       );
     }
   }
+
   void _openWhatsApp(String phoneNumber) async {
     final Uri whatsappUri = Uri(
       scheme: 'https',
@@ -74,100 +78,191 @@ class _FirstPageState extends State<FirstPage> {
     await launch(launchUri.toString());
   }
 
+
+  void _makeEmailCall(String emailAddress) async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: emailAddress,
+    );
+
+    if (await canLaunch(emailUri.toString())) {
+      await launch(emailUri.toString());
+    } else {
+      throw 'Could not launch $emailUri';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Leads List'),
         backgroundColor: Colors.teal,
+        elevation: 0,
       ),
       body: RefreshIndicator(
         onRefresh: _fetchLeads,
         child: _leads.isEmpty
-            ? Center(child: Text('No Leads Added'))
+            ? Center(child: CircularProgressIndicator())
             : ListView.builder(
           itemCount: _leads.length,
           itemBuilder: (context, index) {
             final lead = _leads[index];
 
-            return Padding(
-              padding: const EdgeInsets.all(8.0),
+            return GestureDetector(
+              onLongPress:
+               () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DetailsPage(lead: lead,),
+                  ),
+                );
+              },
               child: Card(
-                shadowColor: Colors.green,
-                clipBehavior: Clip.antiAlias,
+                color: Colors.teal.shade100,
+                margin: EdgeInsets.all(16.0),
+                elevation: 15,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                color: Colors.teal.shade100,
-                elevation: 8,
-                margin: EdgeInsets.all(8.0),
                 child: Padding(
                   padding: EdgeInsets.all(16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Center(
-                              child: Text(lead.name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,)),
-                            ),
-                            SizedBox(height: 10),
+                      Row(
+                        children: [
+
+                          CircleAvatar(
+                            backgroundImage: lead.image_path != null
+                                ? NetworkImage('http://127.0.0.1:8000/storage/${lead.image_path}')
+                                : null,
+                            radius: 30,
+                            child: lead.image_path == null
+                                ? Icon(Icons.person, size: 30) // Replace with any default icon or image
+                                : null,
+                          )
+                          ,
+                          SizedBox(width: 20),
+                          Text(lead.name, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              _makePhoneCall(lead.contactNumber.toString());
+                            },
+                            icon: Icon(Icons.call,size: 30, color: Colors.green),
+                          ),
+                          SizedBox(width: 15,),
+                          Text(  '${lead.contactNumber}',style: TextStyle(fontSize: 16),),
+                          SizedBox(width: 100,),
+
+                          lead.isWhatsapp==true
+                              ? GestureDetector(
+                            onTap: () {
+                              _openWhatsApp(lead.contactNumber.toString());
+                            },
+                            child: Image.asset('asset/logo/whatsp_icon.png', scale: 15),
+                          )
+                              : Text(''),
+                        ],),
+                      ListTile(
+                        leading: Icon(Icons.email, color: Colors.blue),
+                        title: Text(lead.email ?? 'No email provided'),
+                        subtitle: Text('Email'),
+                        onTap: () {
+                          if (lead.email != null) _makeEmailCall(lead.email!);
+                        },
+                      ),
+                      Card(
+                        color: Colors.teal.shade100,
 
 
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                IconText(icon: Icons.phone, text: '${lead.contactNumber}'),
-                              IconButton(
-                                onPressed: () {
-                                  _makePhoneCall(lead.contactNumber.toString());
-                                },
-                                icon: Icon(Icons.call, color: Colors.green),
+                        shape: RoundedRectangleBorder(
+
+                          borderRadius: BorderRadius.circular(10),
+
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.home, color: Colors.grey),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      lead.address,
+                                      style: TextStyle(fontSize: 16),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
-                                if (lead.isWhatsapp==false)
-                              GestureDetector(
-                                  onTap: (){
-                                    _openWhatsApp(lead.contactNumber.toString());
-                                  },
-                                  child: Image.asset('asset/logo/whatsp_icon.png',scale: 15,)
-
-                              )
-                            ],),
-
-                            IconText(icon: Icons.email, text: '${lead.email}'),
-                            IconText(icon: Icons.home, text: lead.address),
-                            IconText(icon: Icons.flag, text: 'State: ${lead.stateName}'),
-                            IconText(icon: Icons.flag_outlined, text: 'District: ${lead.districtName}'),
-                            IconText(icon: Icons.location_city, text: 'City: ${lead.cityName}'),
-                            IconText(icon: Icons.map, text: ' ${lead.locationCoordinates}'),
-                            IconText(icon: Icons.date_range, text: 'Follow-up date: ${lead.followup_date}'),
-                            Divider(color: Colors.grey,height: 25,),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                              GestureDetector(
-                                  onTap: () async {
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => Editpage(lead: lead), // Pass the lead data
-                                      ),
-                                    );
-                                    _fetchLeads();
-                                  },
-                                  child: Image.asset('asset/logo/edit_icon.png',scale: 10,)),
-
-                                GestureDetector(
-                                    onTap: (){
-                                    },
-                                    child: Image.asset('asset/logo/delete_icon.png',scale: 10,)),
-                            ],)
-                          ],
+                              SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(Icons.flag, color: Colors.grey),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      lead.stateName,
+                                      style: TextStyle(fontSize: 16),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(Icons.map, color: Colors.grey),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      lead.locationCoordinates,
+                                      style: TextStyle(fontSize: 16),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-
+                      // Divider(color: Colors.grey, height: 20),
+                   SizedBox(height: 10,),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          GestureDetector(
+                            onTap: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => Editpage(lead: lead),
+                                ),
+                              );
+                            },
+                            child: Image.asset('asset/logo/edit_icon.png', scale: 10),
+                          ),
+                          SizedBox(width: 10),
+                          GestureDetector(
+                            onTap: () {
+                              _deleteLead(lead.id);
+                            },
+                            child: Image.asset('asset/logo/delete_icon.png', scale: 10),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),

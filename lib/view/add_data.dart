@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
@@ -10,7 +11,12 @@ import 'dart:developer';
 import 'package:contacts_service/contacts_service.dart';
 import 'package:intl/intl.dart';
 import 'package:lead_enquiry/Model/leaddata_model.dart';
+import 'package:lead_enquiry/constants/image_pick.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../constants/globals.dart';
+
 
 class Editpage extends StatefulWidget {
   final Lead? lead;
@@ -22,6 +28,10 @@ class Editpage extends StatefulWidget {
 
 class _EditpageState extends State<Editpage> {
   final _formKey = GlobalKey<FormBuilderState>();
+
+  File? _image;
+  final picker = ImagePicker();
+
   bool followUp = false;
 
   List<dynamic> _states = [];
@@ -36,10 +46,12 @@ class _EditpageState extends State<Editpage> {
   Position? currentPosition;
 
 
+
   @override
   void initState() {
     super.initState();
     _fetchStates();
+
     if (widget.lead != null) {
       _selectedState = widget.lead!.state;
       _fetchDistricts(widget.lead!.state);
@@ -48,6 +60,7 @@ class _EditpageState extends State<Editpage> {
     }
   }
 
+
   Future<void> pickContact() async {
     PermissionStatus permissionStatus = await Permission.contacts.request();
 
@@ -55,12 +68,22 @@ class _EditpageState extends State<Editpage> {
       Contact? contact = await ContactsService.openDeviceContactPicker();
       if (contact != null && contact.phones!.isNotEmpty) {
         setState(() {
-          _formKey.currentState?.fields['contact_number']?.didChange(contact.phones!.first.value);
+          String phoneNumber = contact.phones!.first.value!;
+          String sanitizedPhoneNumber =
+          phoneNumber.replaceAll(RegExp(r'\D'), '');
+          if (sanitizedPhoneNumber.startsWith('91') &&
+              sanitizedPhoneNumber.length > 10) {
+            sanitizedPhoneNumber = sanitizedPhoneNumber.substring(2);
+          }
+
+          _formKey.currentState!.fields['contact_number']
+              ?.didChange(sanitizedPhoneNumber);
         });
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Contacts permission is required to pick a contact')),
+        const SnackBar(
+            content: const Text('Contacts permission is required to pick a contact')),
       );
     }
   }
@@ -95,6 +118,7 @@ class _EditpageState extends State<Editpage> {
         desiredAccuracy: LocationAccuracy.high);
   }
 
+
   Future<void> _getAddressFromLatLng(Position position) async {
     try {
       List<Placemark> placemarks =
@@ -123,7 +147,7 @@ class _EditpageState extends State<Editpage> {
   }
 
   Future<void> _fetchStates() async {
-    final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/states'));
+    final response = await http.get(Uri.parse('${baseURL}states'));
     if (response.statusCode == 200) {
       setState(() {
         _states = jsonDecode(response.body);
@@ -133,7 +157,7 @@ class _EditpageState extends State<Editpage> {
   }
 
   Future<void> _fetchDistricts(String stateId) async {
-    final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/districts/$stateId'));
+    final response = await http.get(Uri.parse('${baseURL}districts/$stateId'));
     if (response.statusCode == 200) {
       setState(() {
         _districts = jsonDecode(response.body);
@@ -143,7 +167,7 @@ class _EditpageState extends State<Editpage> {
   }
 
   Future<void> _fetchCities(String districtId) async {
-    final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/cities/$districtId'));
+    final response = await http.get(Uri.parse('${baseURL}cities/$districtId'));
     if (response.statusCode == 200) {
       setState(() {
         _cities = jsonDecode(response.body);
@@ -151,71 +175,237 @@ class _EditpageState extends State<Editpage> {
       });
     }
   }
+  Future<void> updateForm(Map<String, dynamic> formData) async {
 
-  Future<void> _submitForm(Map<String, dynamic> formDetails) async {
-    Map<String, dynamic> encodableFormDetails = formDetails.map((key, value) {
+    Map<String, dynamic> encodableFormData = formData.map((key, value) {
       if (value is DateTime) {
         return MapEntry(key, value.toIso8601String());
       }
       return MapEntry(key, value);
+
     });
 
-    if (widget.lead != null) {
+    final response = await http.put(
+      Uri.parse('http://127.0.0.1:8000/api/leads/${widget.lead!.id}'),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(encodableFormData),
+    );
 
-      final response = await http.put(
-        Uri.parse('http://127.0.0.1:8000/api/leads/${widget.lead!.id}'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(encodableFormDetails),
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lead Updated successfully'),
+          backgroundColor: Colors.green,
+        ),
       );
+      setState(() {
 
-      if (response.statusCode == 200) {
-        // Handle success response
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lead updated successfully')),
-        );
-        Navigator.pop(context); // Go back after saving
-      } else {
-        // Handle error response
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update lead')),
-        );
-      }
+      });
     } else {
-
-      final response = await http.post(
-        Uri.parse('http://127.0.0.1:8000/api/leads'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(encodableFormDetails),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to Update lead'),
+          duration: Durations.short1,),
       );
-
-      if (response.statusCode == 201) {
-        // Handle success response
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lead created successfully')),
-        );
-        Navigator.pop(context); // Go back after saving
-      } else {
-        // Handle error response
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create lead')),
-        );
-      }
     }
   }
 
 
 
-  void reset() {
-    _formKey.currentState?.reset();
+  // Future<void> _submitForm(Map<String, dynamic> formDetails) async {
+  //   var request = http.MultipartRequest(
+  //     'POST', // or 'PUT' depending on your needs
+  //     Uri.parse('http://127.0.0.1:8000/api/leads'),
+  //   );
+  //
+  //   request.headers['Content-Type'] = 'multipart/form-data';
+  //
+  //   // Add fields to the request
+  //   formDetails.forEach((key, value) {
+  //     if (key != 'image_path') {
+  //       request.fields[key] = value.toString();
+  //     }
+  //   });
+  //
+  //   print('Request fields: ${request.fields}');
+  //
+  //   // Add image file if available
+  //   if (formDetails['image_path'] != null) {
+  //     File imageFile = formDetails['image_path'];
+  //     request.files.add(await http.MultipartFile.fromPath(
+  //       'image_path',
+  //       imageFile.path,
+  //     ));
+  //     print('Image file selected: ${imageFile.path}');
+  //   } else {
+  //     print('No image file selected');
+  //   }
+  //
+  //   print('Request files: ${request.files}');
+  //
+  //   // Send the request
+  //   var response = await request.send();
+  //
+  //   // Get the response stream
+  //   var responseBody = await response.stream.toBytes();
+  //
+  //   // Get the response string
+  //   var responseString = String.fromCharCodes(responseBody);
+  //
+  //   print('Response string: $responseString');
+  //
+  //   if (response.statusCode == 200) {
+  //     // Handle success response
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Lead created successfully')),
+  //     );
+  //     Navigator.pop(context);
+  //   } else {
+  //     // Handle error response
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to create lead: $responseString')),
+  //     );
+  //   }
+  // }
+  //
+  // Future<void> updateForm(Map<String, dynamic> formData) async {
+  //   var request = http.MultipartRequest(
+  //     'PUT',
+  //     Uri.parse('http://127.0.0.1:8000/api/leads/${widget.lead!.id}'),
+  //   );
+  //
+  //
+  //   // Add form fields
+  //   formData.forEach((key, value) {
+  //     if (key != 'image_path') {
+  //       request.fields[key] = value.toString();
+  //     }
+  //   });
+  //
+  //   print('Request fields: ${request.fields}');
+  //
+  //   // Add image file if available
+  //   if (_image != null) {
+  //     var fileStream = http.ByteStream(_image!.openRead());
+  //     var fileLength = await _image!.length();
+  //     var multipartFile = http.MultipartFile(
+  //       'image_path',
+  //       fileStream,
+  //       fileLength,
+  //       filename: _image!.path,
+  //     );
+  //     request.files.add(multipartFile);
+  //     print('Image file added: ${_image!.path}');
+  //   } else {
+  //     print('No image file selected');
+  //   }
+  //
+  //   // Send the request using http.Client
+  //   var client = http.Client();
+  //
+  //   try {
+  //     var response = await client.send(request);
+  //
+  //     // Read the response body for debugging
+  //     var responseBody = await response.stream.bytesToString();
+  //     print('Response status: ${response.statusCode}');
+  //     print('Response body: $responseBody');
+  //
+  //     // Handle the response
+  //     if (response.statusCode == 200) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(content: Text('Lead updated successfully')),
+  //       );
+  //     } else {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(content: Text('Failed to update lead')),
+  //       );
+  //       print('Error updating lead: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('An error occurred while updating lead')),
+  //     );
+  //     print('Exception updating lead: $e');
+  //   } finally {
+  //     client.close();
+  //   }
+  // }
+
+
+  Future<void> _submitForm(formKey) async {
+    // if (formKey) {
+    var request = http.MultipartRequest('POST', Uri.parse('http://127.0.0.1:8000/api/leads'));
+
+    // Add form fields
+    request.fields['name'] =formKey['name'];
+    request.fields['contact_number'] = formKey['contact_number'];
+    request.fields['is_whatsapp'] = formKey['is_whatsapp'] ? '1' : '0';
+    if (formKey['email'] != null && formKey['email'].isNotEmpty) {
+      request.fields['email'] = formKey['email'];
+    }
+    request.fields['address'] = formKey['address'];
+    request.fields['state'] = formKey['state'];
+    request.fields['district'] = formKey['district'];
+    request.fields['city'] = formKey['city'];
+    request.fields['location_coordinates'] = formKey['location_coordinates'];
+    request.fields['follow_up'] = formKey['follow_up'];
+
+    if (formKey['follow_up_date'] != null) {
+      request.fields['follow_up_date'] = formKey['follow_up_date'].toIso8601String();
+    }
+    request.fields['lead_priority'] = formKey['lead_priority'];
+
+    if (formKey['remarks'] != null && formKey['remarks'].isNotEmpty) {
+      request.fields['remarks'] = formKey['remarks'];
+    }
+
+
+    if (_image != null) {
+      var file = await http.MultipartFile.fromPath('image_path', _image!.path);
+      request.files.add(file);
+    }
+
+    // Send the request
+    var response = await request.send();
+
+    // Handle the response
+    if (response.statusCode == 201 ) {
+      print("Request successful");
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Form submitted successfully'),
+        backgroundColor: Colors.green,
+      ));
+    } else {
+      print("Request failed with status: ${response.statusCode}");
+      var responseBody = await response.stream.bytesToString();
+      print("Response body: $responseBody");
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Form submission failed')));
+    }
+  }
+
+
+
+  // void reset() {
+  //   _formKey.currentState?.reset();
+  //   setState(() {
+  //     followUp = false;
+  //     _formKey.currentState?.fields['follow_up']?.didChange(null);
+  //     _formKey.currentState?.fields['location_coordinates']?.didChange('');
+  //     _formKey.currentState?.fields['state']?.didChange('');
+  //   });
+  // }
+
+  Future<void> _pickImage() async {
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     setState(() {
-      followUp = false;
-      _formKey.currentState?.fields['follow_up']?.didChange(null);
-      _formKey.currentState?.fields['location_coordinates']?.didChange('');
-      _formKey.currentState?.fields['state']?.didChange('');
+      _image = File(pickedFile!.path);
+    });
+  }
+  Future<void> _pickImagecamera() async {
+    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+    setState(() {
+      _image = File(pickedFile!.path);
     });
   }
 
@@ -223,21 +413,80 @@ class _EditpageState extends State<Editpage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Lead data'),
+        backgroundColor: Colors.teal,
+        elevation: 0,
+        title: const Text('Lead data',
+
+        ),
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.only(left: 16.0,right: 16.0,top: 0,bottom: 16),
           child: FormBuilder(
             key: _formKey,
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  SizedBox(height: 10),
+                  SizedBox(height: 10,),
+                  Stack(
+                    children: [
+
+                      CircleAvatar(
+                        backgroundColor: Colors.teal.shade100,
+                        radius: 50,
+                        backgroundImage: _image != null ? FileImage(_image!) : null,
+                        child: _image == null ? const Icon(Icons.person, size: 50,color: Colors.teal,) : null,
+                      ),
+                      Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: IconButton.filled(
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: const Text("Add Profile"),
+                                      actions: [
+                                        IconButton(
+                                            onPressed: () {
+                                              _pickImagecamera();
+                                              Navigator.of(context).pop();
+                                            },
+                                            icon: const Column(
+                                              children: [
+                                                Icon(Icons.camera),
+                                                Text("Camera")
+                                              ],
+                                            )),
+                                        const SizedBox(
+                                          width: 5,
+                                        ),
+                                        IconButton(
+                                            onPressed: () {
+                                              _pickImage();
+                                              Navigator.of(context).pop();
+                                            },
+                                            icon: const Column(
+                                              children: [
+                                                Icon(Icons.image),
+                                                Text("Image")
+                                              ],
+                                            )),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              icon: const Icon(Icons.add))
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
                   FormBuilderTextField(
                     name: 'name',
-                    // controller: _nameController,
                     initialValue: widget.lead?.name,
+
                     decoration: const InputDecoration(
                       prefixIcon: Icon(Icons.person, color: Colors.blue),
                       border: OutlineInputBorder(
@@ -249,19 +498,19 @@ class _EditpageState extends State<Editpage> {
                       FormBuilderValidators.required(),
                     ]),
                   ),
-                  SizedBox(height: 13),
+                  const SizedBox(height: 13),
                   FormBuilderTextField(
                     name: 'contact_number',
-                    // controller: _phoneController,
+                    keyboardType: TextInputType.phone,
                     initialValue: widget.lead?.contactNumber,
                     decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.phone, color: Colors.blue),
-                      border: OutlineInputBorder(
+                      prefixIcon: const Icon(Icons.phone, color: Colors.blue),
+                      border: const OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
                       labelText: 'Contact Number',
                       suffixIcon: IconButton(
-                        icon: Icon(Icons.contacts),
+                        icon: const Icon(Icons.contacts),
                         onPressed: () {
                           pickContact();
                         },
@@ -272,16 +521,17 @@ class _EditpageState extends State<Editpage> {
                       FormBuilderValidators.minLength(10),
                     ]),
                   ),
-                  SizedBox(height: 5),
+                  const SizedBox(height: 5),
 
 
                   FormBuilderCheckbox(
                     name: 'is_whatsapp',
-                    title: Text('Is this a WhatsApp number?',
+                    title: const Text('Is this a WhatsApp number?',
                         style: TextStyle(fontSize: 12)),
+
                     initialValue: widget.lead?.isWhatsapp??false,
                   ),
-                  SizedBox(height: 5),
+                  const SizedBox(height: 5),
                   FormBuilderTextField(
                     name: 'email',
                     // controller: _emailController,
@@ -297,11 +547,12 @@ class _EditpageState extends State<Editpage> {
                     //   FormBuilderValidators.email(),
                     // ]),
                   ),
-                  SizedBox(height: 13),
+                  const SizedBox(height: 13),
                   FormBuilderTextField(
                     name: 'address',
                     // controller: _addressController,
                     initialValue: widget.lead?.address,
+
                     decoration: const InputDecoration(
                       prefixIcon: Icon(Icons.home, color: Colors.blue),
                       border: OutlineInputBorder(
@@ -314,10 +565,10 @@ class _EditpageState extends State<Editpage> {
                     ]),
                     maxLines: 4,
                   ),
-                  SizedBox(height: 13),
+                  const SizedBox(height: 13),
                   FormBuilderDropdown(
                     name: 'state',
-                    initialValue:  widget.lead?.state,
+                    // initialValue:  widget.lead?.state,
                     decoration: const InputDecoration(
                       prefixIcon: Icon(Icons.location_city, color: Colors.blue),
                       border: OutlineInputBorder(
@@ -343,10 +594,10 @@ class _EditpageState extends State<Editpage> {
                       });
                     },
                   ),
-                  SizedBox(height: 13),
+                  const SizedBox(height: 13),
                   FormBuilderDropdown(
                     name: 'district',
-                  initialValue: _selectedDistrict,
+                    // initialValue: _selectedDistrict,
                     decoration: const InputDecoration(
                       prefixIcon: Icon(Icons.location_city, color: Colors.blue),
                       border: OutlineInputBorder(
@@ -371,10 +622,10 @@ class _EditpageState extends State<Editpage> {
                       });
                     },
                   ),
-                  SizedBox(height: 13),
+                  const SizedBox(height: 13),
                   FormBuilderDropdown(
                     name: 'city',
-                    initialValue: _selectedCity,
+                    // initialValue: _selectedCity,
                     decoration: const InputDecoration(
                       prefixIcon: Icon(Icons.location_city, color: Colors.blue),
                       border: OutlineInputBorder(
@@ -392,15 +643,15 @@ class _EditpageState extends State<Editpage> {
                       FormBuilderValidators.required(),
                     ]),
                   ),
-                  SizedBox(height: 13),
+                  const SizedBox(height: 13),
                   FormBuilderTextField(
                     name: 'location_coordinates',
 
-                   initialValue:   widget.lead?.locationCoordinates,
+                    initialValue:   widget.lead?.locationCoordinates,
                     decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.location_on, color: Colors.blue),
+                      prefixIcon: const Icon(Icons.location_on, color: Colors.blue),
                       suffixIcon: IconButton(
-                        icon: Icon(Icons.my_location, color: Colors.blue),
+                        icon: const Icon(Icons.my_location, color: Colors.blue),
                         onPressed: () async {
                           Position position = await _determinePosition();
                           setState(() {
@@ -409,20 +660,20 @@ class _EditpageState extends State<Editpage> {
                           });
                         },
                       ),
-                      border: OutlineInputBorder(
+                      border: const OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
                       labelText: 'Location Coordinates',
                     ),
                   ),
-                  SizedBox(height: 13),
+                  const SizedBox(height: 13),
                   FormBuilderRadioGroup(
-                     // initialValue:  widget.lead?.followUp,
+                    // initialValue:  widget.lead?.followUp,
                     name: 'follow_up',
-                     initialValue: widget.lead?.followUp,
+                    initialValue: widget.lead?.followUp,
                     options: [
-                      FormBuilderFieldOption(value: 'Yes'),
-                      FormBuilderFieldOption(value: 'No'),
+                      const FormBuilderFieldOption(value: 'Yes'),
+                      const FormBuilderFieldOption(value: 'No'),
                     ],
                     decoration: const InputDecoration(
                       prefixIcon: Icon(Icons.assignment_turned_in,
@@ -439,7 +690,7 @@ class _EditpageState extends State<Editpage> {
                     },
                   ),
                   if (followUp) ...[
-                    SizedBox(height: 13),
+                    const SizedBox(height: 13),
                     FormBuilderDateTimePicker(
                       name: 'follow_up_date',
                       decoration: const InputDecoration(
@@ -455,14 +706,14 @@ class _EditpageState extends State<Editpage> {
 
                     ),
                   ],
-                  SizedBox(height: 13),
+                  const SizedBox(height: 13),
                   FormBuilderRadioGroup(
-                  initialValue: widget.lead?.leadPriority,
+                    initialValue: widget.lead?.leadPriority,
                     name: 'lead_priority',
                     options: [
-                      FormBuilderFieldOption(value: 'Low'),
-                      FormBuilderFieldOption(value: 'Medium'),
-                      FormBuilderFieldOption(value: 'High'),
+                      const FormBuilderFieldOption(value: 'Low'),
+                      const FormBuilderFieldOption(value: 'Medium'),
+                      const FormBuilderFieldOption(value: 'High'),
                     ],
                     decoration: const InputDecoration(
                       prefixIcon: Icon(Icons.priority_high, color: Colors.blue),
@@ -472,7 +723,7 @@ class _EditpageState extends State<Editpage> {
                       labelText: 'Priority',
                     ),
                   ),
-                  SizedBox(height: 13),
+                  const SizedBox(height: 13),
                   FormBuilderTextField(
                     name: 'remarks',
                     initialValue: widget.lead?.remarks,
@@ -485,18 +736,23 @@ class _EditpageState extends State<Editpage> {
                     ),
                     maxLines: 4,
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (_formKey.currentState!.saveAndValidate()) {
-                        _submitForm(_formKey.currentState!.value);
+                        var formKey = _formKey.currentState!.value;
+                        widget.lead == null
+                            ? await _submitForm(formKey)
+
+                            : await updateForm(formKey);
+                        setState(() {});
                       }
                     },
+                    child: Text(widget.lead == null ? 'Submit' : 'Update'),
+                  )
 
-                    child:
-                    Text(widget.lead==null?'Submit': 'update'),
-                  ),
                 ],
+
               ),
             ),
           ),

@@ -18,6 +18,7 @@ class Lead {
   final String stateName;
   final String districtName;
   final String cityName;
+  String? image_path;
 
 
   Lead({
@@ -40,6 +41,7 @@ class Lead {
     required this.stateName,
     required this.districtName,
     required this.cityName,
+    this.image_path
 
   });
 
@@ -48,7 +50,7 @@ class Lead {
       id: json['id'],
       name: json['name'],
       contactNumber: json['contact_number'],
-      isWhatsapp: json['is_whatsapp'] == 1,
+      isWhatsapp: json['is_whatsapp'] ==1 ,
       email: json['email'],
       address: json['address'],
       state: json['state'],
@@ -65,6 +67,7 @@ class Lead {
       stateName: json['state_name'],
       districtName: json['district_name'],
       cityName: json['city_name'],
+      image_path: json['image_path']
 
     );
   }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lead_enquiry/view/firstpage.dart';
 
 import 'package:lead_enquiry/view/add_data.dart';
+import 'package:lead_enquiry/view/triall2.dart';
+
 
 
 // import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
@@ -20,6 +22,7 @@ class _BottomNavBarDemoState extends State<BottomNavBarDemo> {
   static List<Widget> _widgetOptions = <Widget>[
     FirstPage(),
     Editpage(),
+    // LeadForm()
   ];
 
   void _onItemTapped(int index) {
@@ -45,11 +48,11 @@ class _BottomNavBarDemoState extends State<BottomNavBarDemo> {
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.edit),
-              label: 'Edit',
+              label: 'Create',
             ),
           ],
           currentIndex: _selectedIndex,
-          selectedItemColor: Colors.amber[800],
+          selectedItemColor: Colors.teal.shade800,
           onTap: _onItemTapped,
         ),
       ),

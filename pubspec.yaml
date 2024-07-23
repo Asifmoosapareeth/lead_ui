@@ -48,8 +48,9 @@ dependencies:
   permission_handler: ^10.0.0
   contacts_service: ^0.6.0
   intl: ^0.19.0
-  #  flutter_riverpod: ^2.5.1
-  #  dio:
+  image_picker:
+  dio:
+
   #  contacts_service: ^0.6.3
 
 
