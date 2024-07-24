@@ -28,6 +28,8 @@ class Editpage extends StatefulWidget {
 
 class _EditpageState extends State<Editpage> {
   final _formKey = GlobalKey<FormBuilderState>();
+  final followUpDateController = TextEditingController();
+
 
   File? _image;
   final picker = ImagePicker();
@@ -184,6 +186,7 @@ class _EditpageState extends State<Editpage> {
       return MapEntry(key, value);
 
     });
+
 
     final response = await http.put(
       Uri.parse('http://127.0.0.1:8000/api/leads/${widget.lead!.id}'),
@@ -384,17 +387,15 @@ class _EditpageState extends State<Editpage> {
     }
   }
 
-
-
-  // void reset() {
-  //   _formKey.currentState?.reset();
-  //   setState(() {
-  //     followUp = false;
-  //     _formKey.currentState?.fields['follow_up']?.didChange(null);
-  //     _formKey.currentState?.fields['location_coordinates']?.didChange('');
-  //     _formKey.currentState?.fields['state']?.didChange('');
-  //   });
-  // }
+  void reset() {
+    _formKey.currentState?.reset();
+    setState(() {
+      followUp = false;
+      _formKey.currentState?.fields['follow_up']?.didChange(null);
+      _formKey.currentState?.fields['location_coordinates']?.didChange('');
+      _formKey.currentState?.fields['state']?.didChange('');
+    });
+  }
 
   Future<void> _pickImage() async {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -437,7 +438,20 @@ class _EditpageState extends State<Editpage> {
                         backgroundImage: _image != null ? FileImage(_image!) : null,
                         child: _image == null ? const Icon(Icons.person, size: 50,color: Colors.teal,) : null,
                       ),
-                      Positioned(
+
+                      // CircleAvatar(
+                      //   backgroundColor: Colors.teal.shade100,
+                      //   radius: 50,
+                      //   backgroundImage: widget.lead!.image_path != null
+                      //       ? NetworkImage('http://127.0.0.1:8000/storage/${widget.lead!.image_path}')
+                      //       : null,
+                      //   child: widget.lead!.image_path == null
+                      //       ? const Icon(Icons.person, size: 50, color: Colors.teal)
+                      //       : null,
+                      // ),
+
+
+                        Positioned(
                           bottom: 0,
                           right: 0,
                           child: IconButton.filled(
@@ -704,7 +718,9 @@ class _EditpageState extends State<Editpage> {
                       inputType: InputType.date,
                       format: DateFormat('dd-MM-yyyy') ,
 
-                    ),
+                     ),
+
+
                   ],
                   const SizedBox(height: 13),
                   FormBuilderRadioGroup(
@@ -740,13 +756,17 @@ class _EditpageState extends State<Editpage> {
                   ElevatedButton(
                     onPressed: () async {
                       if (_formKey.currentState!.saveAndValidate()) {
+
                         var formKey = _formKey.currentState!.value;
                         widget.lead == null
                             ? await _submitForm(formKey)
-
                             : await updateForm(formKey);
+
+                        // await _submitForm(formKey);
+
                         setState(() {});
                       }
+                      // reset();
                     },
                     child: Text(widget.lead == null ? 'Submit' : 'Update'),
                   )

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:lead_enquiry/constants/texticon.dart';
 import 'package:lead_enquiry/view/details.dart';
 import 'package:lead_enquiry/view/triall2.dart';
+import '../Model/follow_up_date.dart';
 import '../Model/leaddata_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -92,6 +93,65 @@ class _FirstPageState extends State<FirstPage> {
     }
   }
 
+  Future<List<FollowUpDate>> _fetchFollowUpDates(int leadId) async {
+    final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/follow-up-dates/$leadId'));
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonData = jsonDecode(response.body);
+      return jsonData.map((json) => FollowUpDate.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load follow-up dates');
+    }
+  }
+  void _showFollowUpDates(BuildContext context, int leadId) async {
+    try {
+      List<FollowUpDate> followUpDates = await _fetchFollowUpDates(leadId);
+
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Follow Up Dates'),
+            content: Container(
+              width: double.maxFinite,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: followUpDates.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(followUpDates[index].followUpDates),
+                  );
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Close'),
+              ),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Error'),
+            content: Text('Failed to load follow-up dates'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Close'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -158,6 +218,7 @@ class _FirstPageState extends State<FirstPage> {
                             },
                             icon: Icon(Icons.call,size: 30, color: Colors.green),
                           ),
+
                           SizedBox(width: 15,),
                           Text(  '${lead.contactNumber}',style: TextStyle(fontSize: 16),),
                           SizedBox(width: 100,),
@@ -255,6 +316,13 @@ class _FirstPageState extends State<FirstPage> {
                             child: Image.asset('asset/logo/edit_icon.png', scale: 10),
                           ),
                           SizedBox(width: 10),
+
+                          IconButton(
+                            onPressed: () => _showFollowUpDates(context, lead.id),
+                            icon: Icon(Icons.info, color: Colors.blue),
+                          ),
+
+                          SizedBox(width: 10,),
                           GestureDetector(
                             onTap: () {
                               _deleteLead(lead.id);
