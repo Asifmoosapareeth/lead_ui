@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lead_enquiry/view/firstpage.dart';
 
 import 'package:lead_enquiry/view/add_data.dart';
-import 'package:lead_enquiry/view/triall2.dart';
+import 'package:lead_enquiry/check/triall2.dart';
+import 'package:lead_enquiry/view/mappage.dart';
 
 
 
@@ -22,6 +23,7 @@ class _BottomNavBarDemoState extends State<BottomNavBarDemo> {
   static List<Widget> _widgetOptions = <Widget>[
     FirstPage(),
     Editpage(),
+    MapScreen()
     // LeadForm()
   ];
 
@@ -50,6 +52,10 @@ class _BottomNavBarDemoState extends State<BottomNavBarDemo> {
               icon: Icon(Icons.edit),
               label: 'Create',
             ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.map),
+              label: 'Map View',
+            ),
           ],
           currentIndex: _selectedIndex,
           selectedItemColor: Colors.teal.shade800,
@@ -58,10 +64,6 @@ class _BottomNavBarDemoState extends State<BottomNavBarDemo> {
       ),
     );
   }
-}
-
-void main() {
-  runApp(BottomNavBarDemo());
 }
 
 // class PersistenBottomNavBarDemo extends StatelessWidget {

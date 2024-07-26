@@ -50,7 +50,9 @@ dependencies:
   intl: ^0.19.0
   image_picker:
   dio:
-
+  mapmyindia_gl: ^0.3.2
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
   #  contacts_service: ^0.6.3
 
 

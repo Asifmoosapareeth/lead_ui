@@ -12,9 +12,11 @@ import 'package:contacts_service/contacts_service.dart';
 import 'package:intl/intl.dart';
 import 'package:lead_enquiry/Model/leaddata_model.dart';
 import 'package:lead_enquiry/constants/image_pick.dart';
+import 'package:lead_enquiry/controller/data.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../Model/follow_up_date.dart';
 import '../constants/globals.dart';
 
 
@@ -46,6 +48,11 @@ class _EditpageState extends State<Editpage> {
 
   String currentAddress = 'My Address';
   Position? currentPosition;
+
+  // String? latitude;
+  // String? longitude;
+
+
 
 
 
@@ -129,6 +136,7 @@ class _EditpageState extends State<Editpage> {
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
         setState(() {
+
           currentAddress =
           "${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.administrativeArea}";
         });
@@ -177,17 +185,59 @@ class _EditpageState extends State<Editpage> {
       });
     }
   }
-  Future<void> updateForm(Map<String, dynamic> formData) async {
 
-    Map<String, dynamic> encodableFormData = formData.map((key, value) {
+  // Future<void> updateForm(Map<String, dynamic> formData) async {
+  //
+  //   Map<String, dynamic> encodableFormData = formData.map((key, value) {
+  //     if (value is DateTime) {
+  //       return MapEntry(key, value.toIso8601String());
+  //     }
+  //     return MapEntry(key, value);
+  //
+  //   });
+  //
+  //
+  //   final response = await http.put(
+  //     Uri.parse('http://127.0.0.1:8000/api/leads/${widget.lead!.id}'),
+  //     headers: {
+  //       'Accept': 'application/json',
+  //       'Content-Type': 'application/json; charset=UTF-8',
+  //     },
+  //     body: jsonEncode(encodableFormData),
+  //   );
+  //
+  //   if (response.statusCode == 200) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Lead Updated successfully'),
+  //         backgroundColor: Colors.green,
+  //       ),
+  //     );
+  //     setState(() {
+  //
+  //     });
+  //   } else {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Failed to Update lead'),
+  //         duration: Durations.short1,),
+  //     );
+  //   }
+  // }
+
+
+  Future<void> updateForm(Map<String, dynamic> formData, String latLong) async {
+    // Create a copy of formData and add the lat_long
+    Map<String, dynamic> encodableFormData = Map<String, dynamic>.from(formData);
+    // encodableFormData['lat_long'] = latLong;
+
+    // Convert DateTime fields to ISO 8601 strings
+    encodableFormData = encodableFormData.map((key, value) {
       if (value is DateTime) {
         return MapEntry(key, value.toIso8601String());
       }
       return MapEntry(key, value);
-
     });
 
-
+    // Convert the form data to JSON
     final response = await http.put(
       Uri.parse('http://127.0.0.1:8000/api/leads/${widget.lead!.id}'),
       headers: {
@@ -197,19 +247,21 @@ class _EditpageState extends State<Editpage> {
       body: jsonEncode(encodableFormData),
     );
 
+    // Handle the response
     if (response.statusCode == 200) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lead Updated successfully'),
+        const SnackBar(content: Text('Lead updated successfully'),
           backgroundColor: Colors.green,
         ),
       );
       setState(() {
-
+        // Update the state if needed
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to Update lead'),
-          duration: Durations.short1,),
+        const SnackBar(content: Text('Failed to update lead'),
+          duration: Duration(seconds: 2),
+        ),
       );
     }
   }
@@ -353,6 +405,8 @@ class _EditpageState extends State<Editpage> {
     request.fields['district'] = formKey['district'];
     request.fields['city'] = formKey['city'];
     request.fields['location_coordinates'] = formKey['location_coordinates'];
+    request.fields['latitude'] = currentPosition!.latitude.toString();
+    request.fields['longitude'] = currentPosition!.longitude.toString();
     request.fields['follow_up'] = formKey['follow_up'];
 
     if (formKey['follow_up_date'] != null) {
@@ -758,9 +812,12 @@ class _EditpageState extends State<Editpage> {
                       if (_formKey.currentState!.saveAndValidate()) {
 
                         var formKey = _formKey.currentState!.value;
+
+                        String latLong = currentPosition.toString();
                         widget.lead == null
                             ? await _submitForm(formKey)
-                            : await updateForm(formKey);
+                            // : await updateForm(formKey);
+                            : await updateForm(formKey,latLong);
 
                         // await _submitForm(formKey);
 

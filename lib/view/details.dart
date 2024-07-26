@@ -65,6 +65,8 @@ class _DetailsPageState extends State<DetailsPage> {
                         : buildDetailRow('WhatsApp', 'This number is not on WhatsApp'),
                     buildDetailRow('Email', widget.lead.email),
                     buildDetailRow('Address', widget.lead.address),
+                    buildDetailRow('Remarks', widget.lead.remarks?? 'N/A'),
+
                   ],
                 ),
               ),

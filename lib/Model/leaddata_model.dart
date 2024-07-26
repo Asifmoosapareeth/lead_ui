@@ -9,6 +9,8 @@ class Lead {
   final String district;
   final String city;
   final String locationCoordinates;
+  final String latitude;
+  final String longitude;
   final String followUp;
    String? followup_date;
   final String leadPriority;
@@ -32,6 +34,8 @@ class Lead {
     required this.district,
     required this.city,
     required this.locationCoordinates,
+    required this.latitude,
+    required this.longitude,
     required this.followUp,
     this.followup_date,
     required this.leadPriority,
@@ -57,6 +61,8 @@ class Lead {
       district: json['district'],
       city: json['city'],
       locationCoordinates: json['location_coordinates'],
+      latitude: json['latitude'],
+      longitude: json['longitude'],
       followUp: json['follow_up'],
       followup_date: json['follow_up_date'],
 
