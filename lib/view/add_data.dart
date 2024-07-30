@@ -181,7 +181,7 @@ class _EditpageState extends State<Editpage> {
     if (response.statusCode == 200) {
       setState(() {
         _cities = jsonDecode(response.body);
-        _selectedCity=widget.lead?.city;
+        // _selectedCity=widget.lead?.city;
       });
     }
   }
@@ -227,7 +227,8 @@ class _EditpageState extends State<Editpage> {
   Future<void> updateForm(Map<String, dynamic> formData, String latLong) async {
     // Create a copy of formData and add the lat_long
     Map<String, dynamic> encodableFormData = Map<String, dynamic>.from(formData);
-    // encodableFormData['lat_long'] = latLong;
+    encodableFormData?['latitude'] = currentPosition?.latitude.toString()==null?widget.lead?.latitude:currentPosition?.latitude.toString();
+    encodableFormData?['longitude'] = currentPosition?.longitude.toString()==null?widget.lead?.longitude:currentPosition?.longitude.toString();
 
     // Convert DateTime fields to ISO 8601 strings
     encodableFormData = encodableFormData.map((key, value) {
@@ -237,7 +238,7 @@ class _EditpageState extends State<Editpage> {
       return MapEntry(key, value);
     });
 
-    // Convert the form data to JSON
+
     final response = await http.put(
       Uri.parse('http://127.0.0.1:8000/api/leads/${widget.lead!.id}'),
       headers: {
@@ -816,14 +817,11 @@ class _EditpageState extends State<Editpage> {
                         String latLong = currentPosition.toString();
                         widget.lead == null
                             ? await _submitForm(formKey)
-                            // : await updateForm(formKey);
                             : await updateForm(formKey,latLong);
-
-                        // await _submitForm(formKey);
 
                         setState(() {});
                       }
-                      // reset();
+                      reset();
                     },
                     child: Text(widget.lead == null ? 'Submit' : 'Update'),
                   )

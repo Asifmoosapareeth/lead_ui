@@ -5,6 +5,8 @@ import 'package:lead_enquiry/view/add_data.dart';
 import 'package:lead_enquiry/check/triall2.dart';
 import 'package:lead_enquiry/view/mappage.dart';
 
+import 'mapview.dart';
+
 
 
 // import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
@@ -23,6 +25,7 @@ class _BottomNavBarDemoState extends State<BottomNavBarDemo> {
   static List<Widget> _widgetOptions = <Widget>[
     FirstPage(),
     Editpage(),
+    // MapScreen()
     MapScreen()
     // LeadForm()
   ];

@@ -30,18 +30,18 @@ class _FirstPageState extends State<FirstPage> {
     _fetchLeads();
   }
 
-  Future<void> _fetchLeads() async {
-    final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/leads'));
-    if (response.statusCode == 200) {
-      setState(() {
-        List<dynamic> leadsJson = jsonDecode(response.body);
-        _leads = leadsJson.map((json) => Lead.fromJson(json)).toList();
-      });
-    } else {
-      print('Failed to fetch leads: ${response.statusCode}');
-    }
-  }
-
+  // Future<void> _fetchLeads() async {
+  //   final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/leads'));
+  //   if (response.statusCode == 200) {
+  //     setState(() {
+  //       List<dynamic> leadsJson = jsonDecode(response.body);
+  //       _leads = leadsJson.map((json) => Lead.fromJson(json)).toList();
+  //     });
+  //   } else {
+  //     print('Failed to fetch leads: ${response.statusCode}');
+  //   }
+  // }
+  //
   Future<void> _deleteLead(int leadId) async {
     final response = await http.delete(Uri.parse('http://127.0.0.1:8000/api/leads/$leadId'));
     if (response.statusCode == 200 || response.statusCode == 204) {
@@ -58,6 +58,24 @@ class _FirstPageState extends State<FirstPage> {
       );
     }
   }
+  Future<void> _fetchLeads() async {
+    try {
+      final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/leads'));
+      if (response.statusCode == 200) {
+        if (mounted) { // Check if the widget is still mounted
+          setState(() {
+            List<dynamic> leadsJson = jsonDecode(response.body);
+            _leads = leadsJson.map((json) => Lead.fromJson(json)).toList();
+          });
+        }
+      } else {
+        print('Failed to fetch leads: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching leads: $e');
+    }
+  }
+
 
   void _openWhatsApp(String phoneNumber) async {
     final Uri whatsappUri = Uri(

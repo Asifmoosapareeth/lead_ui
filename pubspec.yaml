@@ -53,6 +53,8 @@ dependencies:
   mapmyindia_gl: ^0.3.2
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
+  location: ^7.0.0
+  google_maps_flutter: ^2.7.0
   #  contacts_service: ^0.6.3
 
 
