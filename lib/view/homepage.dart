@@ -88,6 +88,8 @@ import 'package:lead_enquiry/view/firstpage.dart';
 import 'package:lead_enquiry/view/add_data.dart';
 import 'package:lead_enquiry/view/mappage.dart';
 import '../check/sqflite check/lead_check.dart';
+import '../check/trial3.dart';
+import 'local_storage.dart';
 
 
 class BottomNavBarDemo extends StatefulWidget {
@@ -103,7 +105,9 @@ class _BottomNavBarDemoState extends State<BottomNavBarDemo> {
     Editpage(),
     // LeadFormPage(),
     LeadsListPage(),
+
     MapScreen(),
+    // LocationFetcher(),
   ];
 
   void _onItemTapped(int index) {
@@ -140,6 +144,10 @@ class _BottomNavBarDemoState extends State<BottomNavBarDemo> {
               icon: Icon(Icons.map),
               label: 'Map View',
             ),
+            // BottomNavigationBarItem(
+            //   icon: Icon(Icons.location_disabled_rounded),
+            //   label: 'location',
+            // ),
           ],
           currentIndex: _selectedIndex,
           selectedItemColor: Colors.teal.shade800,

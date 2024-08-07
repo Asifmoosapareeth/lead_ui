@@ -14,7 +14,7 @@ class CustomMarker extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: EdgeInsets.all(4.0),
+          padding: EdgeInsets.all(2.0),
           color: Colors.black.withOpacity(0.7),
           child: Text(
             leadName,

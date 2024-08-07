@@ -11,13 +11,12 @@ import 'dart:developer';
 import 'package:contacts_service/contacts_service.dart';
 import 'package:intl/intl.dart';
 import 'package:lead_enquiry/Model/leaddata_model.dart';
-import 'package:lead_enquiry/constants/image_pick.dart';
-import 'package:lead_enquiry/controller/data.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
-
-import '../Model/follow_up_date.dart';
+import '../check/helper_sqflite.dart';
+import '../check/sqflite check/helper2.dart';
 import '../constants/globals.dart';
+import '../controller/sqflite_controller.dart';
 
 
 class Editpage extends StatefulWidget {
@@ -52,10 +51,6 @@ class _EditpageState extends State<Editpage> {
   // String? latitude;
   // String? longitude;
 
-
-
-
-
   @override
   void initState() {
     super.initState();
@@ -68,7 +63,6 @@ class _EditpageState extends State<Editpage> {
 
     }
   }
-
 
   Future<void> pickContact() async {
     PermissionStatus permissionStatus = await Permission.contacts.request();
@@ -159,11 +153,13 @@ class _EditpageState extends State<Editpage> {
   Future<void> _fetchStates() async {
     final response = await http.get(Uri.parse('${baseURL}states'));
     if (response.statusCode == 200) {
-      setState(() {
-        _states = jsonDecode(response.body);
-        print(response.body);
-      });
+      if (mounted) {
+        setState(() {
+          _states = jsonDecode(response.body);
+        });
+      }
     }
+
   }
 
   Future<void> _fetchDistricts(String stateId) async {
@@ -253,141 +249,79 @@ class _EditpageState extends State<Editpage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lead updated successfully'),
           backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
         ),
       );
       setState(() {
-        // Update the state if needed
+
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update lead'),
+        SnackBar(
+          content: Text('Failed to update lead: ${response.body}'),
           duration: Duration(seconds: 2),
         ),
       );
     }
   }
 
-
-
-  // Future<void> _submitForm(Map<String, dynamic> formDetails) async {
-  //   var request = http.MultipartRequest(
-  //     'POST', // or 'PUT' depending on your needs
-  //     Uri.parse('http://127.0.0.1:8000/api/leads'),
-  //   );
+  // Future<void> _submitForm(formKey) async {
+  //   var connectivityResult = await (Connectivity().checkConnectivity());
+  //   bool hasInternet = connectivityResult != ConnectivityResult.none;
   //
-  //   request.headers['Content-Type'] = 'multipart/form-data';
+  //   var leadData = {
+  //     'name': formKey['name'],
+  //     'contact_number': formKey['contact_number'],
+  //     'is_whatsapp': formKey['is_whatsapp'] ? '1' : '0',
+  //     'email': formKey['email'],
+  //     'address': formKey['address'],
+  //     'state': formKey['state'],
+  //     'district': formKey['district'],
+  //     'city': formKey['city'],
+  //     'location_coordinates': formKey['location_coordinates'],
+  //     'latitude': currentPosition!.latitude.toString(),
+  //     'longitude': currentPosition!.longitude.toString(),
+  //     'follow_up': formKey['follow_up'],
+  //     'follow_up_date': formKey['follow_up_date']?.toIso8601String(),
+  //     'lead_priority': formKey['lead_priority'],
+  //     'remarks': formKey['remarks'],
+  //     'image_path': _image?.path,
+  //     'synced': hasInternet ? 1 : 0, // Mark as synced if there's internet
+  //   };
   //
-  //   // Add fields to the request
-  //   formDetails.forEach((key, value) {
-  //     if (key != 'image_path') {
-  //       request.fields[key] = value.toString();
+  //   if (hasInternet) {
+  //     // Send the request to the backend
+  //     var request = http.MultipartRequest('POST', Uri.parse('http://127.0.0.1:8000/api/leads'));
+  //     leadData.forEach((key, value) {
+  //       if (value != null) {
+  //         request.fields[key] = value.toString();
+  //       }
+  //     });
+  //
+  //     if (_image != null) {
+  //       var file = await http.MultipartFile.fromPath('image_path', _image!.path);
+  //       request.files.add(file);
   //     }
-  //   });
   //
-  //   print('Request fields: ${request.fields}');
+  //     var response = await request.send();
   //
-  //   // Add image file if available
-  //   if (formDetails['image_path'] != null) {
-  //     File imageFile = formDetails['image_path'];
-  //     request.files.add(await http.MultipartFile.fromPath(
-  //       'image_path',
-  //       imageFile.path,
-  //     ));
-  //     print('Image file selected: ${imageFile.path}');
-  //   } else {
-  //     print('No image file selected');
-  //   }
-  //
-  //   print('Request files: ${request.files}');
-  //
-  //   // Send the request
-  //   var response = await request.send();
-  //
-  //   // Get the response stream
-  //   var responseBody = await response.stream.toBytes();
-  //
-  //   // Get the response string
-  //   var responseString = String.fromCharCodes(responseBody);
-  //
-  //   print('Response string: $responseString');
-  //
-  //   if (response.statusCode == 200) {
-  //     // Handle success response
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Lead created successfully')),
-  //     );
-  //     Navigator.pop(context);
-  //   } else {
-  //     // Handle error response
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Failed to create lead: $responseString')),
-  //     );
-  //   }
-  // }
-  //
-  // Future<void> updateForm(Map<String, dynamic> formData) async {
-  //   var request = http.MultipartRequest(
-  //     'PUT',
-  //     Uri.parse('http://127.0.0.1:8000/api/leads/${widget.lead!.id}'),
-  //   );
-  //
-  //
-  //   // Add form fields
-  //   formData.forEach((key, value) {
-  //     if (key != 'image_path') {
-  //       request.fields[key] = value.toString();
-  //     }
-  //   });
-  //
-  //   print('Request fields: ${request.fields}');
-  //
-  //   // Add image file if available
-  //   if (_image != null) {
-  //     var fileStream = http.ByteStream(_image!.openRead());
-  //     var fileLength = await _image!.length();
-  //     var multipartFile = http.MultipartFile(
-  //       'image_path',
-  //       fileStream,
-  //       fileLength,
-  //       filename: _image!.path,
-  //     );
-  //     request.files.add(multipartFile);
-  //     print('Image file added: ${_image!.path}');
-  //   } else {
-  //     print('No image file selected');
-  //   }
-  //
-  //   // Send the request using http.Client
-  //   var client = http.Client();
-  //
-  //   try {
-  //     var response = await client.send(request);
-  //
-  //     // Read the response body for debugging
-  //     var responseBody = await response.stream.bytesToString();
-  //     print('Response status: ${response.statusCode}');
-  //     print('Response body: $responseBody');
-  //
-  //     // Handle the response
-  //     if (response.statusCode == 200) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('Lead updated successfully')),
-  //       );
+  //     if (response.statusCode == 201) {
+  //       print("Request successful");
+  //       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Form submitted successfully'), backgroundColor: Colors.green,));
   //     } else {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('Failed to update lead')),
-  //       );
-  //       print('Error updating lead: ${response.statusCode}');
+  //       print("Request failed with status: ${response.statusCode}");
+  //       var responseBody = await response.stream.bytesToString();
+  //       print("Response body: $responseBody");
+  //       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Form submission failed')));
   //     }
-  //   } catch (e) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('An error occurred while updating lead')),
-  //     );
-  //     print('Exception updating lead: $e');
-  //   } finally {
-  //     client.close();
+  //   } else {
+  //     // Save the data locally
+  //     await DatabaseHelper().insertLead(leadData);
+  //     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved locally due to no internet')));
   //   }
   // }
+
+
 
 
   Future<void> _submitForm(formKey) async {
@@ -411,8 +345,10 @@ class _EditpageState extends State<Editpage> {
     request.fields['follow_up'] = formKey['follow_up'];
 
     if (formKey['follow_up_date'] != null) {
-      request.fields['follow_up_date'] = formKey['follow_up_date'].toIso8601String();
+      request.fields['follow_up_date'] = formKey['follow_up_date'] ;
     }
+
+
     request.fields['lead_priority'] = formKey['lead_priority'];
 
     if (formKey['remarks'] != null && formKey['remarks'].isNotEmpty) {
@@ -434,6 +370,7 @@ class _EditpageState extends State<Editpage> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Form submitted successfully'),
         backgroundColor: Colors.green,
       ));
+
     } else {
       print("Request failed with status: ${response.statusCode}");
       var responseBody = await response.stream.bytesToString();
@@ -469,11 +406,13 @@ class _EditpageState extends State<Editpage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.teal,
+        backgroundColor: Colors.teal.shade100,
         elevation: 0,
-        title: const Text('Lead data',
-
+        title: Center(
+          child: const Text('Lead data',style: TextStyle(fontWeight: FontWeight.bold,),
+          ),
         ),
+
       ),
       body: SafeArea(
         child: Padding(
@@ -808,23 +747,64 @@ class _EditpageState extends State<Editpage> {
                     maxLines: 4,
                   ),
                   const SizedBox(height: 20),
+                  // ElevatedButton(
+                  //   onPressed: () async {
+                  //     if (_formKey.currentState!.saveAndValidate()) {
+                  //
+                  //       var formKey = _formKey.currentState!.value;
+                  //       (formKey['follow_up_date'] as DateTime?)
+                  //           ?.toIso8601String() ??
+                  //           '';
+                  //       await DatabaseHelper().insertLead(formKey);
+                  //       String latLong = currentPosition.toString();
+                  //       widget.lead == null
+                  //           ? await _submitForm(formKey)
+                  //           : await updateForm(formKey,latLong);
+                  //
+                  //       setState(() {});
+                  //     }
+                  //     // reset();
+                  //   },
+                  //   child: Text(widget.lead == null ? 'Submit' : 'Update'),
+                  // )
+
                   ElevatedButton(
+                    // style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade100),
                     onPressed: () async {
                       if (_formKey.currentState!.saveAndValidate()) {
+                        // Create a modifiable copy of the form data
+                        var formKey = Map<String, dynamic>.from(_formKey.currentState!.value);
 
-                        var formKey = _formKey.currentState!.value;
+                        formKey['latitude'] = currentPosition?.latitude.toString() ?? '';
+                        formKey['longitude'] = currentPosition?.longitude.toString() ?? '';
+
+                        if (_image != null) {
+                          formKey['image_path'] = _image!.path;
+                        } else {
+                          formKey['image_path'] = '';
+                        }
+                        if (widget.lead == null) {
+                          await DatabaseHelper().insertLead(formKey);
+                        }
+
+
+                        if (formKey.containsKey('follow_up_date') && formKey['follow_up_date'] is DateTime) {
+                          formKey['follow_up_date'] = (formKey['follow_up_date'] as DateTime).toIso8601String();
+                        }
 
                         String latLong = currentPosition.toString();
                         widget.lead == null
                             ? await _submitForm(formKey)
-                            : await updateForm(formKey,latLong);
+                            :  await updateForm(formKey, latLong);
 
                         setState(() {});
                       }
-                      reset();
                     },
                     child: Text(widget.lead == null ? 'Submit' : 'Update'),
                   )
+
+
+
 
                 ],
 

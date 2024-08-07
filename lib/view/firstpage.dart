@@ -8,6 +8,7 @@ import '../Model/follow_up_date.dart';
 import '../Model/leaddata_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../controller/AuthController.dart';
 import '../controller/data.dart';
 import 'add_data.dart';
 
@@ -20,7 +21,7 @@ class FirstPage extends StatefulWidget {
 }
 
 class _FirstPageState extends State<FirstPage> {
-  List<Lead> _leads = [];
+   List<Lead> _leads = [];
   List<FollowUpDate> followUpDates = [];
 
 
@@ -49,7 +50,7 @@ class _FirstPageState extends State<FirstPage> {
         _leads.removeWhere((lead) => lead.id == leadId);
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lead deleted successfully')),
+        SnackBar(content: Text('Lead deleted successfully'),backgroundColor: Colors.red,duration: Duration(seconds: 1),),
       );
     } else {
       print('Failed to delete lead: ${response.statusCode}');
@@ -192,9 +193,13 @@ class _FirstPageState extends State<FirstPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Leads List'),
-        backgroundColor: Colors.teal,
+        title: Center(child: Text('Leads List',style: TextStyle(fontWeight: FontWeight.bold ),)),
+        backgroundColor: Colors.teal.shade100,
         elevation: 0,
+        actions: [
+          IconButton(onPressed:() => AuthServices.logout(context),
+              icon: Icon(Icons.logout_sharp))
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _fetchLeads,

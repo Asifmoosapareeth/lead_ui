@@ -25,8 +25,13 @@ class _DetailsPageState extends State<DetailsPage> {
               child: Column(
                 children: [
                   CircleAvatar(
-                    backgroundImage: NetworkImage('http://127.0.0.1:8000/storage/${widget.lead.image_path}'),
-                    radius: 60,
+                    backgroundImage: widget.lead.image_path != null
+                        ? NetworkImage('http://127.0.0.1:8000/storage/${widget.lead.image_path}')
+                        : null,
+                    radius: 50,
+                    child: widget.lead.image_path == null
+                        ? Icon(Icons.person, size: 30)
+                        : null,
                   ),
                   SizedBox(height: 20),
                   Text(
