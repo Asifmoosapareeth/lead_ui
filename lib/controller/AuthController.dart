@@ -48,24 +48,58 @@ class AuthServices {
     return response;
   }
 
+  // static Future<void> logout(BuildContext context) async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final token = prefs.getString('token');
+  //
+  //   if (token != null) {
+  //     var url = Uri.parse('${baseURL}logout');
+  //     await http.post(url, headers: {
+  //       'Content-Type': 'application/json',
+  //       'Accept': 'application/json',
+  //       'Authorization': 'Bearer $token',
+  //     });
+  //
+  //     await prefs.clear();
+  //     Navigator.pushReplacement(
+  //       context,
+  //       MaterialPageRoute(builder: (context) => LoginPage()),
+  //     );
+  //   }else{
+  //     print("Logout Failed");
+  //   }
+  // }
   static Future<void> logout(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
     if (token != null) {
       var url = Uri.parse('${baseURL}logout');
-      await http.post(url, headers: {
+      final response = await http.post(url, headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
       });
 
-      await prefs.clear();
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => LoginPage()),
+      if (response.statusCode == 200) {
+        await prefs.clear();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LoginPage()),
+        );
+      } else {
+        print("Logout failed with status code: ${response.statusCode}");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Logout failed: ${response.statusCode}')),
+        );
+      }
+    } else {
+      print("Token not found");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Authentication token not found')),
       );
     }
   }
+
 }
 

@@ -17,7 +17,7 @@ import '../check/helper_sqflite.dart';
 import '../check/sqflite check/helper2.dart';
 import '../constants/globals.dart';
 import '../controller/sqflite_controller.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Editpage extends StatefulWidget {
   final Lead? lead;
@@ -221,6 +221,16 @@ class _EditpageState extends State<Editpage> {
 
 
   Future<void> updateForm(Map<String, dynamic> formData, String latLong) async {
+
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('token');
+
+    if (token == null) {
+      print("Token not found");
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authentication token not found')));
+      return;
+    }
+
     // Create a copy of formData and add the lat_long
     Map<String, dynamic> encodableFormData = Map<String, dynamic>.from(formData);
     encodableFormData?['latitude'] = currentPosition?.latitude.toString()==null?widget.lead?.latitude:currentPosition?.latitude.toString();
@@ -240,6 +250,7 @@ class _EditpageState extends State<Editpage> {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
       },
       body: jsonEncode(encodableFormData),
     );
@@ -322,11 +333,20 @@ class _EditpageState extends State<Editpage> {
   // }
 
 
-
-
   Future<void> _submitForm(formKey) async {
+
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('token');
+
+    if (token == null) {
+      print("Token not found");
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authentication token not found')));
+      return;
+    }
     // if (formKey) {
     var request = http.MultipartRequest('POST', Uri.parse('http://127.0.0.1:8000/api/leads'));
+
+    request.headers['Authorization'] = 'Bearer $token';
 
     // Add form fields
     request.fields['name'] =formKey['name'];

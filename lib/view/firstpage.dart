@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:lead_enquiry/constants/texticon.dart';
 import 'package:lead_enquiry/view/details.dart';
 import 'package:lead_enquiry/check/triall2.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../Model/follow_up_date.dart';
 import '../Model/leaddata_model.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -31,51 +32,123 @@ class _FirstPageState extends State<FirstPage> {
     _fetchLeads();
   }
 
-  // Future<void> _fetchLeads() async {
-  //   final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/leads'));
-  //   if (response.statusCode == 200) {
+
+  // Future<void> _deleteLead(int leadId) async {
+  //   final response = await http.delete(Uri.parse('http://127.0.0.1:8000/api/leads/$leadId'));
+  //   if (response.statusCode == 200 || response.statusCode == 204) {
   //     setState(() {
-  //       List<dynamic> leadsJson = jsonDecode(response.body);
-  //       _leads = leadsJson.map((json) => Lead.fromJson(json)).toList();
+  //       _leads.removeWhere((lead) => lead.id == leadId);
   //     });
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Lead deleted successfully'),backgroundColor: Colors.red,duration: Duration(seconds: 1),),
+  //     );
   //   } else {
-  //     print('Failed to fetch leads: ${response.statusCode}');
+  //     print('Failed to delete lead: ${response.statusCode}');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to delete lead')),
+  //     );
   //   }
   // }
+   Future<void> _deleteLead(int leadId) async {
+     final SharedPreferences prefs = await SharedPreferences.getInstance();
+     final String? token = prefs.getString('token');
+
+     if (token == null) {
+       print("Token not found");
+       ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(content: Text('Authentication token not found')),
+       );
+       return;
+     }
+
+     final response = await http.delete(
+       Uri.parse('http://127.0.0.1:8000/api/leads/$leadId'),
+       headers: {
+         'Authorization': 'Bearer $token',
+         'Accept': 'application/json',
+       },
+     );
+
+     if (response.statusCode == 200 || response.statusCode == 204) {
+       setState(() {
+         _leads.removeWhere((lead) => lead.id == leadId);
+       });
+       ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(
+           content: Text('Lead deleted successfully'),
+           backgroundColor: Colors.red,
+           duration: Duration(seconds: 1),
+         ),
+       );
+     } else {
+       print('Failed to delete lead: ${response.statusCode}');
+       ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(
+           content: Text('Failed to delete lead: ${response.body}'),
+           duration: Duration(seconds: 2),
+         ),
+       );
+     }
+   }
+
+   // Future<void> _fetchLeads() async {
   //
-  Future<void> _deleteLead(int leadId) async {
-    final response = await http.delete(Uri.parse('http://127.0.0.1:8000/api/leads/$leadId'));
-    if (response.statusCode == 200 || response.statusCode == 204) {
-      setState(() {
-        _leads.removeWhere((lead) => lead.id == leadId);
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lead deleted successfully'),backgroundColor: Colors.red,duration: Duration(seconds: 1),),
-      );
-    } else {
-      print('Failed to delete lead: ${response.statusCode}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete lead')),
-      );
-    }
-  }
-  Future<void> _fetchLeads() async {
-    try {
-      final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/leads'));
-      if (response.statusCode == 200) {
-        if (mounted) { // Check if the widget is still mounted
-          setState(() {
-            List<dynamic> leadsJson = jsonDecode(response.body);
-            _leads = leadsJson.map((json) => Lead.fromJson(json)).toList();
-          });
-        }
-      } else {
-        print('Failed to fetch leads: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error fetching leads: $e');
-    }
-  }
+  //   try {
+  //     final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/leads'));
+  //     if (response.statusCode == 200) {
+  //       if (mounted) { // Check if the widget is still mounted
+  //         setState(() {
+  //           List<dynamic> leadsJson = jsonDecode(response.body);
+  //           _leads = leadsJson.map((json) => Lead.fromJson(json)).toList();
+  //         });
+  //       }
+  //     } else {
+  //       print('Failed to fetch leads: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     print('Error fetching leads: $e');
+  //   }
+  // }
+   Future<void> _fetchLeads() async {
+     final SharedPreferences prefs = await SharedPreferences.getInstance();
+     final String? token = prefs.getString('token');
+
+     if (token == null) {
+       print("Token not found");
+       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authentication token not found')));
+       return;
+     }
+
+     try {
+       final response = await http.get(
+         Uri.parse('http://127.0.0.1:8000/api/leads'),
+         headers: {
+           'Authorization': 'Bearer $token',
+           'Content-Type': 'application/json',
+           'Accept': 'application/json',
+         },
+       );
+
+       if (response.statusCode == 200) {
+         if (mounted) { // Check if the widget is still mounted
+           setState(() {
+             List<dynamic> leadsJson = jsonDecode(response.body);
+             _leads = leadsJson.map((json) => Lead.fromJson(json)).toList();
+           });
+         }
+       } else {
+         print('Failed to fetch leads: ${response.statusCode}');
+         ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(content: Text('Failed to fetch leads: ${response.statusCode}')),
+         );
+       }
+     } catch (e) {
+       print('Error fetching leads: $e');
+       ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(content: Text('Error fetching leads: $e')),
+       );
+     }
+   }
 
 
   void _openWhatsApp(String phoneNumber) async {
@@ -197,7 +270,8 @@ class _FirstPageState extends State<FirstPage> {
         backgroundColor: Colors.teal.shade100,
         elevation: 0,
         actions: [
-          IconButton(onPressed:() => AuthServices.logout(context),
+          IconButton(
+              onPressed:() => AuthServices.logout(context),
               icon: Icon(Icons.logout_sharp))
         ],
       ),
@@ -261,7 +335,7 @@ class _FirstPageState extends State<FirstPage> {
                           ),
 
                           SizedBox(width: 15,),
-                          Text(  '${lead.contactNumber}',style: TextStyle(fontSize: 16),),
+                          Text('${lead.contactNumber}',style: TextStyle(fontSize: 16),),
                           SizedBox(width: 100,),
 
                           lead.isWhatsapp==true
