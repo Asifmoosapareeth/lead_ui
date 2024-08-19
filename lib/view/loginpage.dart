@@ -20,6 +20,20 @@ class _LoginPageState extends State<LoginPage> {
   String _emailError = '';
   String _passwordError = '';
   bool _isLoading = false;
+  String _userName = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('userName') ?? '';
+    });
+  }
 
   @override
   void dispose() {
@@ -116,6 +130,41 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 30),
+                Padding(
+                  padding: const EdgeInsets.only(left: 45,top: 10,bottom: 10),
+                  child: Text('Login to your Account',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                // Padding(
+                //   padding: const EdgeInsets.only(left: 30,top: 10,bottom: 10),
+                //   child: FutureBuilder(
+                //     future: SharedPreferences.getInstance(),
+                //     builder: (context, snapshot) {
+                //       if (snapshot.hasData) {
+                //         String? userName = snapshot.data?.getString('userName');
+                //         return Text('Hey, $userName, Login to your Account',
+                //           style: TextStyle(
+                //             color: Colors.black87,
+                //             fontSize: 15,
+                //           ),
+                //         );
+                //       } else {
+                //         return Text('Hey, Login to your Account',
+                //           style: TextStyle(
+                //             color: Colors.black87,
+                //             fontSize: 15,
+                //           ),
+                //         );
+                //       }
+                //     },
+                //   ),
+                // ),
                 const SizedBox(height: 30),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 40),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
@@ -18,6 +19,9 @@ import '../check/sqflite check/helper2.dart';
 import '../constants/globals.dart';
 import '../controller/sqflite_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'firstpage.dart';
+import 'homepage.dart';
 
 class Editpage extends StatefulWidget {
   final Lead? lead;
@@ -260,7 +264,7 @@ class _EditpageState extends State<Editpage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lead updated successfully'),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+          duration: Duration(seconds: 1),
         ),
       );
       setState(() {
@@ -270,7 +274,7 @@ class _EditpageState extends State<Editpage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to update lead: ${response.body}'),
-          duration: Duration(seconds: 2),
+          duration: Duration(seconds: 1),
         ),
       );
     }
@@ -333,6 +337,70 @@ class _EditpageState extends State<Editpage> {
   // }
 
 
+  Future<void> _handleSubmit() async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+      final formKey = Map<String, dynamic>.from(_formKey.currentState!.value);
+
+
+      formKey['latitude'] = currentPosition?.latitude.toString() ?? '';
+      formKey['longitude'] = currentPosition?.longitude.toString() ?? '';
+
+
+      formKey['image_path'] = _image?.path ?? '';
+
+      log('Form Data: $formKey');
+
+      var connectivityResult = await (Connectivity().checkConnectivity());
+
+      if (connectivityResult == ConnectivityResult.none) {
+
+        await DatabaseHelper().insertLead(formKey);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Form saved offline.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 1),
+          ),
+        );
+      } else {
+        String latLong = currentPosition.toString();
+
+        if (widget.lead != null) {
+          await updateForm(formKey,latLong);
+        } else {
+          await _submitForm(formKey);
+        }
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Form submitted successfully.'),
+        //     backgroundColor: Colors.green,
+        //   ),
+        // );
+      }
+
+
+      // reset();
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(builder: (context) => BottomNavBarDemo()),
+      // );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to submit form.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 1),
+        ),
+      );
+      print("Failed to validate form");
+    }
+  }
+
+
+
+
+
   Future<void> _submitForm(formKey) async {
 
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -347,7 +415,6 @@ class _EditpageState extends State<Editpage> {
     var request = http.MultipartRequest('POST', Uri.parse('http://127.0.0.1:8000/api/leads'));
 
     request.headers['Authorization'] = 'Bearer $token';
-
     // Add form fields
     request.fields['name'] =formKey['name'];
     request.fields['contact_number'] = formKey['contact_number'];
@@ -389,6 +456,7 @@ class _EditpageState extends State<Editpage> {
       print("Request successful");
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Form submitted successfully'),
         backgroundColor: Colors.green,
+        duration: Duration(seconds: 1),
       ));
 
     } else {
@@ -713,6 +781,7 @@ class _EditpageState extends State<Editpage> {
                     ),
                     onChanged: (value) {
                       setState(() {
+                        //           ? await _submitForm(formKey)
                         followUp = value == 'Yes';
                       });
                     },
@@ -778,7 +847,6 @@ class _EditpageState extends State<Editpage> {
                   //       await DatabaseHelper().insertLead(formKey);
                   //       String latLong = currentPosition.toString();
                   //       widget.lead == null
-                  //           ? await _submitForm(formKey)
                   //           : await updateForm(formKey,latLong);
                   //
                   //       setState(() {});
@@ -788,41 +856,52 @@ class _EditpageState extends State<Editpage> {
                   //   child: Text(widget.lead == null ? 'Submit' : 'Update'),
                   // )
 
+//                   ElevatedButton(
+//                     // style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade100),
+//                     onPressed: () async {
+//                       if (_formKey.currentState!.saveAndValidate()) {
+//                         // Create a modifiable copy of the form data
+//                         var formKey = Map<String, dynamic>.from(_formKey.currentState!.value);
+//
+//                         formKey['latitude'] = currentPosition?.latitude.toString() ?? '';
+//                         formKey['longitude'] = currentPosition?.longitude.toString() ?? '';
+//
+//                         if (_image != null) {
+//                           formKey['image_path'] = _image!.path;
+//                         } else {
+//                           formKey['image_path'] = '';
+//                         }
+//                         if (widget.lead == null) {
+//                           await DatabaseHelper().insertLead(formKey);
+//                         }
+// //                        _handleSubmit();
+//
+//                         if (formKey.containsKey('follow_up_date') && formKey['follow_up_date'] is DateTime) {
+//                           formKey['follow_up_date'] = (formKey['follow_up_date'] as DateTime).toIso8601String();
+//                         }
+//
+//                         String latLong = currentPosition.toString();
+//                         widget.lead == null
+//                             ? await _submitForm(formKey)
+//                             :  await updateForm(formKey, latLong);
+//
+//                         setState(() {});
+//                         reset();
+//                         Navigator.push(
+//                           context,
+//                           MaterialPageRoute(builder: (context) =>  BottomNavBarDemo()),
+//                         );
+//                       }
+//                     },
+//                     child: Text(widget.lead == null ? 'Submit' : 'Update'),
+//                   )
                   ElevatedButton(
-                    // style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade100),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade100),
                     onPressed: () async {
-                      if (_formKey.currentState!.saveAndValidate()) {
-                        // Create a modifiable copy of the form data
-                        var formKey = Map<String, dynamic>.from(_formKey.currentState!.value);
-
-                        formKey['latitude'] = currentPosition?.latitude.toString() ?? '';
-                        formKey['longitude'] = currentPosition?.longitude.toString() ?? '';
-
-                        if (_image != null) {
-                          formKey['image_path'] = _image!.path;
-                        } else {
-                          formKey['image_path'] = '';
-                        }
-                        if (widget.lead == null) {
-                          await DatabaseHelper().insertLead(formKey);
-                        }
-
-
-                        if (formKey.containsKey('follow_up_date') && formKey['follow_up_date'] is DateTime) {
-                          formKey['follow_up_date'] = (formKey['follow_up_date'] as DateTime).toIso8601String();
-                        }
-
-                        String latLong = currentPosition.toString();
-                        widget.lead == null
-                            ? await _submitForm(formKey)
-                            :  await updateForm(formKey, latLong);
-
-                        setState(() {});
-                      }
+                      await _handleSubmit();
                     },
                     child: Text(widget.lead == null ? 'Submit' : 'Update'),
                   )
-
 
 
 

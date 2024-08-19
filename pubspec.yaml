@@ -63,7 +63,7 @@ dependencies:
 #  flutter_staggered_animations: ^1.0.0
   shared_preferences: ^2.2.3
   loading_animation_widget: ^1.2.1
-
+  flutter_login: ^5.0.0
   #  contacts_service: ^0.6.3
 
 

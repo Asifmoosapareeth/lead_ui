@@ -159,46 +159,63 @@ class DatabaseHelper {
   }
 
   // Locations Table Operations
-  Future<void> insertLocation(double latitude, double longitude, String timestamp) async {
-    final db = await database;
-    await db.insert(
-      'locations',
-      {
-        'latitude': latitude,
-        'longitude': longitude,
-        'timestamp': timestamp,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
+  // Future<void> insertLocation(double latitude, double longitude, String timestamp) async {
+  //   final db = await database;
+  //   await db.insert(
+  //     'locations',
+  //     {
+  //       'latitude': latitude,
+  //       'longitude': longitude,
+  //       'timestamp': timestamp,
+  //     },
+  //     conflictAlgorithm: ConflictAlgorithm.replace,
+  //   );
+  // }
+  //
+  // Future<List<Map<String, dynamic>>> getLocations() async {
+  //   final db = await database;
+  //   return await db.query('locations');
+  // }
+  //
+  // Future<void> deleteLocation(int id) async {
+  //   final db = await database;
+  //   await db.delete(
+  //     'locations',
+  //     where: 'id = ?',
+  //     whereArgs: [id],
+  //   );
+  // }
+  //
+  // Future<LatLng?> getLatestCoordinates() async {
+  //   final db = await database;
+  //   final List<Map<String, dynamic>> maps = await db.query(
+  //     'locations',
+  //     orderBy: 'timestamp DESC',
+  //     limit: 1,
+  //   );
+  //
+  //   if (maps.isNotEmpty) {
+  //     final latitude = maps.first['latitude'] as double;
+  //     final longitude = maps.first['longitude'] as double;
+  //     return LatLng(latitude, longitude);
+  //   }
+  //   return null;
+  // }
 
-  Future<List<Map<String, dynamic>>> getLocations() async {
-    final db = await database;
-    return await db.query('locations');
-  }
-
-  Future<void> deleteLocation(int id) async {
-    final db = await database;
-    await db.delete(
-      'locations',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
-
-  Future<LatLng?> getLatestCoordinates() async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'locations',
-      orderBy: 'timestamp DESC',
-      limit: 1,
-    );
-
-    if (maps.isNotEmpty) {
-      final latitude = maps.first['latitude'] as double;
-      final longitude = maps.first['longitude'] as double;
-      return LatLng(latitude, longitude);
-    }
-    return null;
-  }
+  //  Future<void> deleteData(int id) async {
+  //   try {
+  //     final db = await database;
+  //     int result =
+  //     await db.rawDelete('DELETE FROM leadEnquiry WHERE id = ?', [id]);
+  //
+  //     if (result > 0) {
+  //       print('Successfully deleted $result record(s)');
+  //     } else {
+  //       print('No record found to delete');
+  //     }
+  //     await getData();
+  //   } catch (error) {
+  //     print('Error deleting data: $error');
+  //   }
+  // }
 }

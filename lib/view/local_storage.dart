@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../Model/leaddata_model.dart';
 import '../../view/add_data.dart';
 import '../controller/sqflite_controller.dart';
@@ -53,7 +54,11 @@ class _LeadsListPageState extends State<LeadsListPage> {
 
   void _deleteLead(int leadId) async {
     await DatabaseHelper().deleteLead(leadId);
-    _fetchLeads();
+
+    setState(() {
+      _fetchLeads();
+    });
+
   }
   // Future<void> syncLeads() async {
   //   final db = await DatabaseHelper().database;
@@ -89,11 +94,19 @@ class _LeadsListPageState extends State<LeadsListPage> {
   // }
 
   Future<void> _submitForm(Map<String, dynamic> lead) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('token');
+
+    if (token == null) {
+      print("Token not found");
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authentication token not found')));
+      return;
+    }
+
     var request = http.MultipartRequest(
         'POST', Uri.parse('http://127.0.0.1:8000/api/leads'));
 
-    // Include necessary headers
-    request.headers['Accept'] = 'application/json';
+    request.headers['Authorization'] = 'Bearer $token';
 
     // Add form fields
     request.fields['name'] = lead['name'] ?? "";
@@ -121,8 +134,13 @@ class _LeadsListPageState extends State<LeadsListPage> {
       var response = await request.send();
 
       if (response.statusCode == 201 || response.statusCode == 200) {
+
+        DatabaseHelper().deleteLead(lead['id']);
+        _fetchLeads();
         print("Request successful");
         _showAlertDialog(context, 'Success', 'Form submitted successfully');
+
+
       } else {
         var responseBody = await response.stream.bytesToString();
         print("Request failed with status: ${response.statusCode}");

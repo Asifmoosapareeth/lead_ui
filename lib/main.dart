@@ -11,7 +11,8 @@ void main() async{
 
   SharedPreferences prefs = await SharedPreferences.getInstance();
   String? token = prefs.getString('token');
-  runApp(MyApp(
+  runApp(
+      MyApp(
       initialRoute: token != null ? '/home' : '/login'));
 
 }
@@ -32,8 +33,15 @@ class MyApp extends StatelessWidget {
       // home:  HomePage(),
       debugShowCheckedModeBanner: false,
 
+      // navigatorObservers: [TransitionRouteObserver()],
+      // initialRoute: LoginScreen.routeName,
+      // routes: {
+      //   LoginScreen.routeName: (context) => const LoginScreen(),
+      //   DashboardScreen.routeName: (context) => const DashboardScreen(),
+      // },
 
     );
+
   }
 }
 

@@ -4,14 +4,19 @@ import 'package:http/http.dart' as http;
 import 'package:lead_enquiry/constants/texticon.dart';
 import 'package:lead_enquiry/view/details.dart';
 import 'package:lead_enquiry/check/triall2.dart';
+import 'package:lead_enquiry/view/mappage.dart';
+import 'package:lead_enquiry/view/trial%20map.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Model/follow_up_date.dart';
 import '../Model/leaddata_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../check/locationcoo.dart';
+import '../check/trial3.dart';
 import '../controller/AuthController.dart';
 import '../controller/data.dart';
 import 'add_data.dart';
+import 'currentmap.dart';
 
 
 class FirstPage extends StatefulWidget {
@@ -265,14 +270,96 @@ class _FirstPageState extends State<FirstPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
+    drawer: Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          FutureBuilder(
+            future: SharedPreferences.getInstance(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                String? userName = snapshot.data?.getString('userName');
+
+                return DrawerHeader(
+                  decoration: BoxDecoration(
+                    color: Colors.tealAccent.shade100,
+                  ),
+                  child: Text('$userName',style: TextStyle(fontWeight: FontWeight.bold),),
+                );
+              } else {
+                return DrawerHeader(
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                  ),
+                  child: Text('Welcome'),
+                );
+              }
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.map, color: Colors.teal),
+            title: Text('Map View'),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) =>
+               //   LocationTrack()
+                  MapScreen2()
+              ));
+            },
+          ),
+          Divider(),
+          ListTile(
+            leading: Icon(Icons.location_on, color: Colors.teal),
+            title: Text('Coordinates'),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => Logger()));
+            },
+          ),
+          Divider(),
+          ListTile(
+            leading: Icon(Icons.logout, color: Colors.teal),
+            title: Text('Logout'),
+            onTap: () => AuthServices.logout(context)
+          ),
+          Divider(),
+        ],
+      ),
+    ),
       appBar: AppBar(
         title: Center(child: Text('Leads List',style: TextStyle(fontWeight: FontWeight.bold ),)),
         backgroundColor: Colors.teal.shade100,
         elevation: 0,
+
         actions: [
           IconButton(
-              onPressed:() => AuthServices.logout(context),
-              icon: Icon(Icons.logout_sharp))
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text('Logout'),
+                    content: Text('Are you sure you want to logout?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(); // Close the dialog
+                        },
+                        child: Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          AuthServices.logout(context); // Perform logout
+                          Navigator.of(context).pop(); // Close the dialog
+                        },
+                        child: Text('Logout'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            icon: Icon(Icons.logout_sharp),
+          )
         ],
       ),
       body: RefreshIndicator(

@@ -3,9 +3,11 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:location/location.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../Model/leaddata_model.dart';
 import '../constants/custom_marker.dart';
+import '../controller/sqflite_controller.dart';
 import 'details.dart';
 
 class MapScreen extends StatefulWidget {
@@ -21,6 +23,7 @@ class _MapScreenState extends State<MapScreen> {
   bool _serviceEnabled = false;
   PermissionStatus _permissionGranted = PermissionStatus.denied;
   LocationData? _currentLocation;
+
 
   @override
   void initState() {
@@ -75,7 +78,22 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _fetchLeads() async {
-    final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/leads'));
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('token');
+    if (token == null) {
+      print("Token not found");
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authentication token not found')));
+      return;
+    }
+
+    final response = await http.get(
+        Uri.parse('http://127.0.0.1:8000/api/leads'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    );
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
@@ -88,16 +106,38 @@ class _MapScreenState extends State<MapScreen> {
 
         if (_leads.length >= 2) {
           _fetchRoute(
-          // LatLng(double.parse(_leads[1].latitude), double.parse(_leads[1].longitude)),
-              LatLng(10.022767, 76.309544),
-            LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
-            // LatLng(double.parse(_leads[1].latitude), double.parse(_leads[1].longitude)),
+          LatLng(double.parse(_leads[1].latitude), double.parse(_leads[1].longitude)),
+               LatLng(double.parse(_leads[0].latitude), double.parse(_leads[0].longitude)),
+            //   LatLng(10.022767, 76.309544),
+            //LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
+
           );
         }
       }
     }
   }
-
+  // Future<void> _fetchAndPlotCoordinates() async {
+  //   try {
+  //     final List<Map<String, dynamic>> result = await DatabaseHelper().getLocations();
+  //
+  //     if (result.isNotEmpty) {
+  //       final List<LatLng> coordinates = result.map((coord) {
+  //         return LatLng(coord['latitude'], coord['longitude']);
+  //       }).toList();
+  //
+  //       setState(() {
+  //         _routePoints = coordinates;
+  //       });
+  //
+  //       // Add polyline to map
+  //       _addRouteToMap(_routePoints);
+  //     } else {
+  //       print('No coordinates found in the database');
+  //     }
+  //   } catch (e) {
+  //     print('Error fetching coordinates: $e');
+  //   }
+  // }
 
   Future<void> _fetchRoute(LatLng origin, LatLng destination) async {
     final baseurl = "https://api.openrouteservice.org/v2/directions/driving-car?";
@@ -212,9 +252,10 @@ class _MapScreenState extends State<MapScreen> {
             urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
             subdomains: ['a', 'b', 'c'],
           ),
+
           MarkerLayer(
             markers: [
-              if (_currentLocation != null)
+               if (_currentLocation != null)
                 Marker(
                   point: LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
                   width: 80.0,
@@ -229,7 +270,6 @@ class _MapScreenState extends State<MapScreen> {
                 try {
                   final lat = double.parse(lead.latitude);
                   final lon = double.parse(lead.longitude);
-
                   return Marker(
                     point: LatLng(lat, lon),
                     width: 80.0,
