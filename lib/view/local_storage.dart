@@ -150,7 +150,7 @@ class _LeadsListPageState extends State<LeadsListPage> {
       }
     } catch (e) {
       print("Request failed with error: $e");
-      _showAlertDialog(context, 'Error', 'Form submission failed due to an error');
+      _showAlertDialog(context, 'No Internet', 'Turn on your Internet Connection');
     }
   }
 
@@ -162,7 +162,9 @@ class _LeadsListPageState extends State<LeadsListPage> {
         actions: [
           IconButton(
               icon: Icon(Icons.sync),
-              onPressed:(){}
+              onPressed:(){
+                _fetchLeads();
+              }
             //_syncLeads,
           ),
         ],
@@ -193,7 +195,7 @@ class _LeadsListPageState extends State<LeadsListPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(lead['id'].toString()),
-                          Text(lead['name'] ?? 'No name'),
+                          Text(lead['name'] ?? 'No name',style: TextStyle(fontWeight: FontWeight.bold),),
                           Text('Contact: ${lead['is_whatsapp'] ?? 'No contact'}'),
                           Text(lead['contact_number']),
                           Text(lead['email'] ?? 'No email'),
@@ -244,7 +246,7 @@ class _LeadsListPageState extends State<LeadsListPage> {
                               IconButton(
 
                                 onPressed: () {
-                                  int leadId = lead['id'];  // Extract the id from the lead object
+                                  int leadId = lead['id'];
                                   _deleteLead(leadId);
                                 },
                                 icon: Icon(Icons.delete),

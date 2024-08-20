@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:lead_enquiry/constants/texticon.dart';
+import 'package:lead_enquiry/controller/sqflite_controller.dart';
 import 'package:lead_enquiry/view/details.dart';
 import 'package:lead_enquiry/check/triall2.dart';
 import 'package:lead_enquiry/view/mappage.dart';
@@ -338,18 +339,21 @@ class _FirstPageState extends State<FirstPage> {
                 builder: (BuildContext context) {
                   return AlertDialog(
                     title: Text('Logout'),
-                    content: Text('Are you sure you want to logout?'),
+                    content: Text('Are you sure you want to log out? \n'
+                        ' All unsaved data will be lost.'
+                    ),
                     actions: [
                       TextButton(
                         onPressed: () {
-                          Navigator.of(context).pop(); // Close the dialog
+                          Navigator.of(context).pop();
                         },
                         child: Text('Cancel'),
                       ),
                       TextButton(
-                        onPressed: () {
-                          AuthServices.logout(context); // Perform logout
-                          Navigator.of(context).pop(); // Close the dialog
+                        onPressed: ()
+                        {
+                          AuthServices.logout(context);
+                          DatabaseHelper().clearDatabase();
                         },
                         child: Text('Logout'),
                       ),

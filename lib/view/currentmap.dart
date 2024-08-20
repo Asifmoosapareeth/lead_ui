@@ -5,12 +5,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:location/location.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import 'dart:convert';
-import '../Model/leaddata_model.dart';
-import '../constants/custom_marker.dart';
-import '../controller/sqflite_controller.dart';
-import 'details.dart';
+
 
 class MapScreen2 extends StatefulWidget {
   @override
@@ -46,13 +43,15 @@ class _MapScreenState extends State<MapScreen2> {
     _currentLocation = await _location.getLocation();
     if (mounted && _currentLocation != null) {
       setState(() {
+
         _mapController.move(
           LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
-          10.0,
+          12.0,
         );
       });
     }
   }
+
 
   Future<void> _startLocationUpdates() async {
     _timer = Timer.periodic(Duration(seconds: 5), (Timer timer) async {
@@ -171,10 +170,28 @@ class _MapScreenState extends State<MapScreen2> {
                 ),
             ],
           ),
+          MarkerLayer(
+            markers: [
+              if (_routePoints.isNotEmpty)
+                Marker(
+                  point: _routePoints.last,
+                  width: 80.0,
+                  height: 80.0,
+                    child: Icon(
+                      Icons.boy_rounded,
+                      size: 30.0,
+                      color: Colors.red,
+                    ),
+                  ),
+            ],
+          ),
+
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: ()=> _getCurrentLocation,
+        onPressed: (){
+          _getCurrentLocation();
+        },
         child: Icon(Icons.my_location),
         tooltip: 'Go to Current Location',
       ),

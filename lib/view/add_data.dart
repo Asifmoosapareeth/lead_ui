@@ -335,14 +335,80 @@ class _EditpageState extends State<Editpage> {
   //     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved locally due to no internet')));
   //   }
   // }
+///
+
+  // Future<void> _handleSubmit() async {
+  //   if (_formKey.currentState!.validate()) {
+  //     _formKey.currentState!.save();
+  //     final formKey = Map<String, dynamic>.from(_formKey.currentState!.value);
+  //
+  //
+  //     formKey['latitude'] = currentPosition?.latitude.toString() ?? '';
+  //     formKey['longitude'] = currentPosition?.longitude.toString() ?? '';
+  //
+  //
+  //     formKey['image_path'] = _image?.path ?? '';
+  //
+  //     log('Form Data: $formKey');
+  //
+  //     var connectivityResult = await (Connectivity().checkConnectivity());
+  //
+  //     if (connectivityResult == ConnectivityResult.none) {
+  //
+  //       await DatabaseHelper().insertLead(formKey);
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text('Form saved offline.'),
+  //           backgroundColor: Colors.orange,
+  //           duration: Duration(seconds: 1),
+  //         ),
+  //       );
+  //     } else {
+  //       String latLong = currentPosition.toString();
+  //
+  //       if (widget.lead != null) {
+  //         await updateForm(formKey,latLong);
+  //       } else {
+  //         await _submitForm(formKey);
+  //         // await DatabaseHelper().insertLead(formKey);
+  //       }
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text('Form submitted successfully.'),
+  //           backgroundColor: Colors.green,
+  //         ),
+  //       );
+  //     }
+  //
+  //
+  //     // reset();
+  //     // Navigator.push(
+  //     //   context,
+  //     //   MaterialPageRoute(builder: (context) => BottomNavBarDemo()),
+  //     // );
+  //   } else {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Failed to submit form.'),
+  //         backgroundColor: Colors.red,
+  //         duration: Duration(seconds: 1),
+  //       ),
+  //     );
+  //     print("Failed to validate form");
+  //   }
+  // }
 
 
-  Future<void> _handleSubmit() async {
-    if (_formKey.currentState!.validate()) {
+  Future<bool> checkInternetConnection() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+    return connectivityResult != ConnectivityResult.none;
+  }
+
+  Future<void> handleSubmit() async {
+    // Validate the form
+    if (_formKey.currentState?.saveAndValidate() ?? false) {
       _formKey.currentState!.save();
       final formKey = Map<String, dynamic>.from(_formKey.currentState!.value);
-
-
       formKey['latitude'] = currentPosition?.latitude.toString() ?? '';
       formKey['longitude'] = currentPosition?.longitude.toString() ?? '';
 
@@ -350,55 +416,27 @@ class _EditpageState extends State<Editpage> {
       formKey['image_path'] = _image?.path ?? '';
 
       log('Form Data: $formKey');
+      // Check connectivity
+      bool isConnected = await checkInternetConnection();
 
-      var connectivityResult = await (Connectivity().checkConnectivity());
+      if (isConnected) {
 
-      if (connectivityResult == ConnectivityResult.none) {
+        try {
+          await _submitForm(formKey);
+        } catch (e) {
+          print("Failed to submit to backend, saving locally: $e");
+          await DatabaseHelper().insertLead(formKey);
+        }
+      } else {
 
         await DatabaseHelper().insertLead(formKey);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Form saved offline.'),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 1),
-          ),
-        );
-      } else {
-        String latLong = currentPosition.toString();
-
-        if (widget.lead != null) {
-          await updateForm(formKey,latLong);
-        } else {
-          await _submitForm(formKey);
-        }
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(
-        //     content: Text('Form submitted successfully.'),
-        //     backgroundColor: Colors.green,
-        //   ),
-        // );
       }
-
-
-      // reset();
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => BottomNavBarDemo()),
-      // );
     } else {
+      print('Form is not valid');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to submit form.'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 1),
-        ),
-      );
-      print("Failed to validate form");
+          SnackBar(content: Text('Please correct the errors in the form.')));
     }
   }
-
-
-
 
 
   Future<void> _submitForm(formKey) async {
@@ -898,7 +936,7 @@ class _EditpageState extends State<Editpage> {
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade100),
                     onPressed: () async {
-                      await _handleSubmit();
+                      await handleSubmit();
                     },
                     child: Text(widget.lead == null ? 'Submit' : 'Update'),
                   )

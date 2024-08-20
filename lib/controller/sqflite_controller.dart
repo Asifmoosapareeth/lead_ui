@@ -157,7 +157,13 @@ class DatabaseHelper {
       print('--------------------------------------');
     }
   }
+  Future<void> clearDatabase() async {
+    final db = await database;
 
+    // Delete all rows from each table
+    await db.delete('leads');
+    await db.delete('locations');
+  }
   // Locations Table Operations
   // Future<void> insertLocation(double latitude, double longitude, String timestamp) async {
   //   final db = await database;
