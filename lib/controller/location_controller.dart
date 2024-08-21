@@ -31,7 +31,7 @@ class DatabaseHelper2 {
     return await db.query('coordinates', orderBy: 'timestamp DESC');
   }
 
-  // Add the clearCoordinates method here
+
   static Future<void> clearCoordinates() async {
     final db = await _getDatabase();
     await db.delete('coordinates');

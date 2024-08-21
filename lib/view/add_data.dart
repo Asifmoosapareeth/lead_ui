@@ -163,7 +163,6 @@ class _EditpageState extends State<Editpage> {
         });
       }
     }
-
   }
 
   Future<void> _fetchDistricts(String stateId) async {
@@ -235,12 +234,12 @@ class _EditpageState extends State<Editpage> {
       return;
     }
 
-    // Create a copy of formData and add the lat_long
+
     Map<String, dynamic> encodableFormData = Map<String, dynamic>.from(formData);
     encodableFormData?['latitude'] = currentPosition?.latitude.toString()==null?widget.lead?.latitude:currentPosition?.latitude.toString();
     encodableFormData?['longitude'] = currentPosition?.longitude.toString()==null?widget.lead?.longitude:currentPosition?.longitude.toString();
 
-    // Convert DateTime fields to ISO 8601 strings
+
     encodableFormData = encodableFormData.map((key, value) {
       if (value is DateTime) {
         return MapEntry(key, value.toIso8601String());
@@ -270,6 +269,11 @@ class _EditpageState extends State<Editpage> {
       setState(() {
 
       });
+      reset();
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => BottomNavBarDemo()),
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -416,20 +420,31 @@ class _EditpageState extends State<Editpage> {
       formKey['image_path'] = _image?.path ?? '';
 
       log('Form Data: $formKey');
-      // Check connectivity
+
       bool isConnected = await checkInternetConnection();
 
       if (isConnected) {
 
         try {
-          await _submitForm(formKey);
+          String latLong = currentPosition.toString();
+          if (widget.lead != null) {
+                    await updateForm(formKey,latLong);
+                  } else {
+                    await _submitForm(formKey);
+
+                  }
         } catch (e) {
           print("Failed to submit to backend, saving locally: $e");
           await DatabaseHelper().insertLead(formKey);
+          ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Form saved offline.'),
+                        backgroundColor: Colors.orange, duration: Duration(seconds: 1),),);
         }
       } else {
-
         await DatabaseHelper().insertLead(formKey);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Form saved offline.'),
+            backgroundColor: Colors.orange, duration: Duration(seconds: 1),),);
       }
     } else {
       print('Form is not valid');
@@ -496,7 +511,11 @@ class _EditpageState extends State<Editpage> {
         backgroundColor: Colors.green,
         duration: Duration(seconds: 1),
       ));
-
+      reset();
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => BottomNavBarDemo()),
+      );
     } else {
       print("Request failed with status: ${response.statusCode}");
       var responseBody = await response.stream.bytesToString();

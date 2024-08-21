@@ -393,7 +393,7 @@ class _FirstPageState extends State<FirstPage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Padding(
-                  padding: EdgeInsets.all(16.0),
+                  padding: EdgeInsets.all(12.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -404,17 +404,17 @@ class _FirstPageState extends State<FirstPage> {
                             backgroundImage: lead.image_path != null
                                 ? NetworkImage('http://127.0.0.1:8000/storage/${lead.image_path}')
                                 : null,
-                            radius: 30,
+                            radius: 20,
                             child: lead.image_path == null
-                                ? Icon(Icons.person, size: 30)
+                                ? Icon(Icons.person, size: 20)
                                 : null,
                           )
                           ,
                           SizedBox(width: 20),
-                          Text(lead.name, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                          Text(lead.name, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                         ],
                       ),
-                      SizedBox(height: 10),
+                      SizedBox(height: 5),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
@@ -478,49 +478,16 @@ class _FirstPageState extends State<FirstPage> {
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            child: Row(
                               children: [
-                                Row(
-                                  children: [
-                                    Icon(Icons.home, color: Colors.grey),
-                                    SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        lead.address,
-                                        style: TextStyle(fontSize: 16),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Icon(Icons.flag, color: Colors.grey),
-                                    SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        lead.stateName,
-                                        style: TextStyle(fontSize: 16),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Icon(Icons.map, color: Colors.grey),
-                                    SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        lead.locationCoordinates,
-                                        style: TextStyle(fontSize: 16),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
+                                Icon(Icons.map, color: Colors.grey),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    lead.locationCoordinates,
+                                    style: TextStyle(fontSize: 16),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ],
                             ),
